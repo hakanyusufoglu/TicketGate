@@ -1,79 +1,64 @@
-# MEMORY.md — TicketGate Proje Hafızası
-# Her session sonunda bu dosyayı güncelle.
-# Yeni session başında ilk oku.
+# MEMORY.md - TicketGate Proje Hafizasi
 
-## Tamamlanan Modüller
+Her session sonunda bu dosya guncellenir. Yeni session basinda AGENTS.md ve CONTEXT.md ile birlikte okunur.
 
-- [x] Solution iskelet — TicketGate.sln, 11 proje
-- [x] TicketGate.Core — Result<T>, AppError, IModule, DomainEvent, ValidationBehavior, PagedResult, ModuleExtensions
-- [x] TicketGate.Identity — Register, Login, RefreshToken (BCrypt, JWT, rotation)
-- [x] docker-compose.yml — postgres, redis, kafka, debezium, elasticsearch, kibana, kafka-ui
-- [x] infrastructure/ klasör yapısı — postgres/init.sql, debezium/connector-config.json
-- [x] AGENTS.md — mimari kurallar ve yasaklar
-- [x] Mimari döküman — TicketGate-Mimari-Dokuman.docx
-- [ ] Prompt 2.5 — Identity uçtan uca test (.http, swagger, migration) — DEVAM EDİYOR
+## Tamamlanan Moduller
+
+- [x] Solution iskeleti - TicketGate.sln, 11 proje
+- [x] TicketGate.Core - Result<T>, AppError, IModule, DomainEvent, ValidationBehavior, PagedResult, ModuleExtensions
+- [x] TicketGate.Identity - Register, Login, RefreshToken (BCrypt, JWT, refresh token rotation)
+- [x] Prompt 2.5 - Identity uctan uca hazirlik: migration, Swagger, .http dosyalari, docker postgres/redis
+- [x] docker-compose.yml - postgres, redis, kafka, debezium, elasticsearch, kibana, kafka-ui
+- [x] infrastructure/ klasor yapisi - postgres/init.sql, debezium/connector-config.json, docker/docker-compose.yml
+- [x] AGENTS.md - mimari kurallar ve yasaklar
+- [x] .agent/ session yonetimi - MEMORY.md, CONTEXT.md, HANDOFF.md
 - [ ] TicketGate.Event
 - [ ] TicketGate.Booking
 - [ ] TicketGate.Payment
 - [ ] TicketGate.Notification
 
-## Alınan Mimari Kararlar
+## Git Durumu
 
-| Tarih | Karar | Gerekçe |
+- Ilk commit atildi.
+- Ilk commit hash: `ad645ff8139e3f4234adc5d7cf2f5426d8947fc9`
+- Ilk commit mesajı: `feat(solution): initial modular monolith skeleton with .NET 10`
+- Ilk commit `origin/main` branch'ine push edildi.
+
+## Alinan Mimari Kararlar
+
+| Tarih | Karar | Gerekce |
 |-------|-------|---------|
-| 2026-05-13 | Modüler Monolith seçildi | Tek geliştirici + AI, microservice karmaşıklığı erken |
-| 2026-05-13 | .NET 10 LTS | Kasım 2028'e kadar destek |
-| 2026-05-13 | Vertical Slice Architecture | Feature bazlı organizasyon, Codex ile tutarlı üretim |
-| 2026-05-13 | `infrastructure/` adı | `infra/` belirsiz, tam isim tercih edildi |
-| 2026-05-13 | Program.cs sade | AddModules + MapModules — her modül kendi IModule'ünü yönetir |
-| 2026-05-13 | ModuleExtensions.cs Core'da | Assembly scan ile otomatik modül keşfi |
-| 2026-05-13 | Repository pattern YASAK | DbContext direkt handler'da — gereksiz soyutlama yok |
-| 2026-05-13 | Result<T> pattern | Exception fırlatma yok, öngörülebilir hata akışı |
-| 2026-05-13 | SSE seçildi (WebSocket değil) | Tek yönlü iletişim yeterli, HTTP/2 uyumlu |
-| 2026-05-13 | Outbox Pattern (Payment) | Stripe/PayPal çağrısı ve DB yazısı atomik olamaz |
-| 2026-05-13 | CDC → Debezium → Kafka → Elastic | Uygulama kodu log yazmaz, WAL otomatik üretir |
-| 2026-05-13 | Redis 3 ayrı rol | Lock (SETNX) / SortedSet (Queue) / Pub-Sub (SSE) karıştırılmaz |
-| 2026-05-13 | .agent/ klasörü | Tool-agnostic session yönetimi (.claude/ değil) |
-
-## Naming Kuralları (özet)
-
-- Command: `{Action}{Entity}Command`
-- Handler: `{Action}{Entity}Handler`
-- Validator: `{Action}{Entity}Validator` (sadece Command)
-- Query: `Get{Entity}{Qualifier}Query`
-- Redis key: `{entity}:{id}:{detail}` → örn: `ticket:uuid:lock`
-- Kafka topic: `db.{module}.{table}` → örn: `db.booking.tickets`
-- Schema: `identity` | `events` | `booking` | `payment` | `outbox`
+| 2026-05-13 | Modular Monolith secildi | Tek deployment, module boundary korunur, microservice karmasasi ertelenir |
+| 2026-05-13 | Program.cs sade tutuldu | Host sadece `AddModules` ve `MapModules` cagirir |
+| 2026-05-13 | Module discovery Core icinde | Yeni modul `IModule` implemente ederek sisteme dahil olur |
+| 2026-05-13 | Repository pattern yasaklandi | EF Core DbContext handler icinde dogrudan kullanilir |
+| 2026-05-13 | AutoMapper yasaklandi | Projection ve explicit mapping tercih edilir |
+| 2026-05-13 | Result<T> hata modeli secildi | Beklenen hatalar exception ile degil typed result ile doner |
+| 2026-05-13 | `infra/` klasoru `infrastructure/` olarak degistirildi | Daha acik ve uzun vadede okunabilir isim |
+| 2026-05-13 | Docker PostgreSQL host portu `55432` yapildi | Lokal Windows PostgreSQL `5432` ile port cakismasi engellendi |
+| 2026-05-13 | Swagger IdentityModule icinde kaydedildi | Program.cs minimal kuralini bozmadan Development ortaminda Swagger acildi |
+| 2026-05-13 | Identity migration `Infrastructure/Persistence/Migrations` altina alindi | Modul bazli migration sahipligi korunur |
 
 ## Bilinen Sorunlar / Dikkat Edilecekler
 
-- Identity migration henüz çalıştırılmadı (Prompt 2.5 bekliyor)
-- appsettings.Development.json'da Jwt__SecretKey placeholder — production'da değiştirilmeli
-- Redis `notify-keyspace-events KEx` docker-compose'da ayarlı, production'da da aktif olmalı
-- Debezium connector henüz register edilmedi (CDC pipeline aktif değil)
-- `outbox` schema kasıtlı olarak CDC scope dışında — Debezium bu schema'yı izlemez
+- Host uzerinde lokal PostgreSQL `5432` dinliyor olabilir; Docker PostgreSQL host portu `55432` olarak kullanilmali.
+- EF CLI surumu `10.0.5`, runtime `10.0.8`; su an migration calisiyor, fakat tooling surumu sonra hizalanmali.
+- `appsettings.Development.json` icindeki JWT secret sadece local development icindir.
+- Debezium connector config mevcut, fakat connector henuz Kafka Connect'e register edilmedi.
+- Kafka, Debezium, Elasticsearch, Kibana ve Kafka UI compose dosyasinda var; mevcut local calismada sadece postgres ve redis baslatildi.
 
 ## Prompt Serisi Durumu
 
 | # | Konu | Durum |
 |---|------|-------|
-| 1 | Solution iskelet + Core + docker-compose | ✅ Tamamlandı |
-| 2 | Identity modülü | ✅ Tamamlandı |
-| 2.5 | Identity uçtan uca (.http, swagger, migration) | 🔄 Codex'te |
-| 3 | Event modülü | ⏳ Bekliyor |
-| 4 | Booking — Ticket entity + ReserveTicket + Redis Lock | ⏳ Bekliyor |
-| 5 | Booking — WaitingRoom | ⏳ Bekliyor |
-| 6 | Booking — TicketLockExpiredWorker | ⏳ Bekliyor |
-| 7 | Payment — InitiatePayment + Outbox | ⏳ Bekliyor |
-| 8 | Payment — OutboxWorker | ⏳ Bekliyor |
-| 9 | Notification — SSE endpoints | ⏳ Bekliyor |
-| 10 | CDC — Debezium + Elasticsearch | ⏳ Bekliyor |
-
-## Stack (hızlı referans)
-
-- .NET 10 LTS · C# 14 · Minimal API
-- EF Core 10 · Npgsql · snake_case naming
-- MediatR 12 · FluentValidation 11
-- PostgreSQL 16 · Redis 7 · Kafka 7.6
-- Debezium 2.6 · Elasticsearch 8.13 · Kibana
-- BCrypt.Net · JWT Bearer
+| 1 | Solution iskelet + Core + docker-compose | Tamamlandi |
+| 2 | Identity modulu | Tamamlandi |
+| 2.5 | Identity uctan uca (.http, Swagger, migration) | Tamamlandi |
+| 3 | Event modulu | Bekliyor |
+| 4 | Booking - Ticket entity + ReserveTicket + Redis Lock | Bekliyor |
+| 5 | Booking - WaitingRoom | Bekliyor |
+| 6 | Booking - TicketLockExpiredWorker | Bekliyor |
+| 7 | Payment - InitiatePayment + Outbox | Bekliyor |
+| 8 | Payment - OutboxWorker | Bekliyor |
+| 9 | Notification - SSE endpoints | Bekliyor |
+| 10 | CDC - Debezium + Elasticsearch | Bekliyor |

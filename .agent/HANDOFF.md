@@ -1,81 +1,44 @@
-# HANDOFF.md — Session Geçiş Şablonu
-# Bu dosyayı her session sonunda Codex/Claude'a şunu söyleyerek ürettir:
-# "Bu session'ı bitiriyoruz. HANDOFF.md'yi güncelle, MEMORY.md ve CONTEXT.md'yi yaz."
-# Sonra yeni tool'da ilk mesaj olarak bu dosyanın içeriğini yapıştır.
+# HANDOFF.md - Session Gecis Ozeti
 
----
-
-## SON HANDOFF — [TARİH GİRİLECEK]
+## Son Handoff - 2026-05-13
 
 ### Proje
-TicketGate — bilet satış platformu
-.NET 10 · Modüler Monolith · Vertical Slice Architecture
-Repo: github.com/[kullanici]/TicketGate
 
-### Bu Session'da Yapılanlar
-<!-- Codex buraya dolduracak -->
-- 
+TicketGate - bilet satis platformu.
+.NET 10, Modular Monolith, Vertical Slice Architecture.
 
-### Biten Görev
-<!-- Hangi prompt tamamlandı -->
+### Bu Session'da Yapilanlar
 
-### Yarım Kalan / Dikkat
-<!-- Tamamlanmayan, bilinmesi gereken -->
+- Mevcut calisma git'e commit edildi.
+- Ana commit: `ad645ff8139e3f4234adc5d7cf2f5426d8947fc9`
+- Ana commit `origin/main` branch'ine push edildi.
+- Docker PostgreSQL port cakismasi giderildi: host portu `55432`, container portu `5432`.
+- Identity migration, tablo ve unique index dogrulamalari tamamlandi.
+- Swagger ve `.http` dosyalari mevcut calismaya dahil edildi.
 
-### Sıradaki Görev
-<!-- Hangi prompt, ne yapılacak -->
+### Biten Gorev
 
-### Yeni Session Başlangıç Komutu
+Prompt 2.5 tamamlandi ve ilk repo commit'i atildi.
+
+### Yari Kalan / Dikkat
+
+- Host makinede lokal PostgreSQL `5432` dinliyor; Docker PostgreSQL icin `55432` kullanilmali.
+- EF CLI `10.0.5`, runtime `10.0.8`; tooling surumu daha sonra hizalanabilir.
+- Kafka/Debezium/Elasticsearch servisleri compose dosyasinda var, fakat bu asamada sadece postgres ve redis calistirildi.
+
+### Siradaki Gorev
+
+Prompt 2.5 ciktisini kontrol et. Sonra Prompt 3 - TicketGate.Event modulune gec.
+
+### Repo Durumu
+
+Bu session sonunda repo temiz olacak sekilde agent guncellemeleri de commit edilecek.
+
+### Yeni Session Baslangic Komutu
+
+```text
+Asagidaki dosyalari sirayla oku, 3-4 cumleyle ozetle, sonra goreve gec:
+1. AGENTS.md
+2. .agent/MEMORY.md
+3. .agent/CONTEXT.md
 ```
-Aşağıdaki dosyaları sırayla oku, sonra göreve başla:
-1. AGENTS.md          → mimari kurallar ve yasaklar
-2. .agent/MEMORY.md   → tamamlanan modüller ve kararlar  
-3. .agent/CONTEXT.md  → aktif görev ve sıradaki adım
-
-Okuduğunu kısaca özetle, sonra şunu yap: [GÖREV]
-```
-
----
-
-## HANDOFF KULLANIM REHBERİ
-
-### Ne zaman üretilir?
-- Token limiti %60-70'e geldiğinde
-- Araç değiştirirken (Codex → Claude Code vb.)
-- Günlük çalışma bitişinde
-- Bir prompt tamamlandığında
-
-### Codex'e söylenecek komut (session sonu)
-```
-Bu session'ı bitiriyoruz.
-1. .agent/MEMORY.md → tamamlanan modüller, yeni kararlar ekle
-2. .agent/CONTEXT.md → aktif görevi ve sıradaki adımı güncelle  
-3. .agent/HANDOFF.md → bu session'ın özetini yaz
-```
-
-### Yeni session başlangıç komutu (evrensel — tüm araçlar)
-```
-TicketGate projesine devam ediyoruz.
-Önce şu dosyaları oku:
-- AGENTS.md
-- .agent/MEMORY.md
-- .agent/CONTEXT.md
-
-Okuduğunu özetle ve [GÖREV] yap.
-```
-
-### Araç bazlı notlar
-
-**Codex CLI:**
-- `AGENTS.md` otomatik okunur
-- Session başında `.agent/` dosyalarını ilk mesajda ver
-
-**Claude Code:**
-- `CLAUDE.md` oluştur, içine: "Read .agent/MEMORY.md and .agent/CONTEXT.md at session start"
-- `--continue` ile son session'a dön
-
-**Cursor:**
-- `.cursorrules` içine aynı yönlendirmeyi ekle
-
-**Web (claude.ai, chatgpt vb.):**
-- HANDOFF.md içeriğini ilk mesaj olarak yapıştır
