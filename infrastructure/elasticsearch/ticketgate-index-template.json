@@ -1,0 +1,18 @@
+{
+  "index_patterns": [
+    "ticketgate-*"
+  ],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": true
+    }
+  },
+  "priority": 100,
+  "_meta": {
+    "description": "Default Elasticsearch index template for TicketGate logs and projections."
+  }
+}

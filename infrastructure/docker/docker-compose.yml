@@ -7,10 +7,10 @@ services:
       POSTGRES_PASSWORD: ticketgate
     command: postgres -c wal_level=logical -c max_replication_slots=5 -c max_wal_senders=5
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   redis:
     image: redis:7-alpine
