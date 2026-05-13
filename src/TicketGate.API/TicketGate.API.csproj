@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TicketGate.Core\TicketGate.Core.csproj" />
+    <ProjectReference Include="..\Modules\TicketGate.Identity\TicketGate.Identity.csproj" />
+    <ProjectReference Include="..\Modules\TicketGate.Event\TicketGate.Event.csproj" />
+    <ProjectReference Include="..\Modules\TicketGate.Booking\TicketGate.Booking.csproj" />
+    <ProjectReference Include="..\Modules\TicketGate.Payment\TicketGate.Payment.csproj" />
+    <ProjectReference Include="..\Modules\TicketGate.Notification\TicketGate.Notification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Http" Version="10.0.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+    <PackageReference Include="StackExchange.Redis" Version="2.13.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
