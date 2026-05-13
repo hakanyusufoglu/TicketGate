@@ -1,4 +1,7 @@
 ### Register
+# Expected:
+# HTTP 201 Created
+# { "userId": "guid" }
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
@@ -8,12 +11,11 @@ Content-Type: application/json
   "fullName": "Test User"
 }
 
-# Expected:
-# HTTP 201 Created
-# { "userId": "guid" }
-
 ### Login
 # @name login
+# Expected:
+# HTTP 200 OK
+# { "accessToken": "...", "refreshToken": "...", "expiresAt": "..." }
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
 
@@ -22,26 +24,22 @@ Content-Type: application/json
   "password": "Test1234!"
 }
 
-# Expected:
-# HTTP 200 OK
-# { "accessToken": "...", "refreshToken": "...", "expiresAt": "..." }
-
-@refreshToken = {{login.response.body.$.refreshToken}}
-
 ### Refresh Token
-POST {{baseUrl}}/api/v1/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "{{refreshToken}}"
-}
-
 # Expected:
 # HTTP 200 OK
 # Yeni access token ve yeni refresh token donmeli.
 # Eski refresh token rotation nedeniyle artik gecersiz olmali.
+POST {{baseUrl}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{login.response.body.$.refreshToken}}"
+}
 
 ### Register duplicate email
+# Expected:
+# HTTP 409 Conflict
+# { "title": "User.EmailTaken", "detail": "..." }
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
@@ -51,11 +49,9 @@ Content-Type: application/json
   "fullName": "Test User"
 }
 
-# Expected:
-# HTTP 409 Conflict
-# { "title": "User.EmailTaken", "detail": "..." }
-
 ### Login wrong password
+# Expected:
+# HTTP 401 Unauthorized
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
 
@@ -63,6 +59,3 @@ Content-Type: application/json
   "email": "test@ticketgate.io",
   "password": "WrongPassword!"
 }
-
-# Expected:
-# HTTP 401 Unauthorized
