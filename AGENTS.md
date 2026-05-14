@@ -269,3 +269,52 @@ Session'ı kapat, dosyaları güncelle, yeni session aç.
 ❌ TicketGate.API'yi dışarıya port expose etmek
 ❌ Her modülde AddOpenBehavior tekrar kaydetmek
 ```
+
+---
+
+## XML Summary kuralları (DEĞİŞTİRİLEMEZ)
+
+Hedef: GitHub'dan projeye bakan her geliştirici her sınıfın neden böyle yazıldığını anlamalı.
+Kod İngilizce, XML summary Türkçe. Her dosyada uygulanır.
+
+### Her sınıfa summary zorunlu
+```csharp
+/// <summary>
+/// Bilet rezervasyon komutunu işler. Redis SETNX ile atomik kilit alır,
+/// TTL=600s uygular. Aynı bilete eş zamanlı istek gelirse 409 döner.
+/// </summary>
+```
+
+### Her metoda summary zorunlu
+```csharp
+/// <summary>
+/// Rezervasyon akışını yönetir: Redis lock → Postgres kontrol → state değişimi → event.
+/// Race condition koruması Redis SETNX'in atomikliği ile sağlanır.
+/// </summary>
+```
+
+### Tip bazlı format
+
+| Tip | Format | Uzunluk |
+|-----|--------|---------|
+| Record (Command/Query/DTO) | Tek satır — ne yapıyor | 1 satır |
+| Handler sınıfı | Ne yapıyor + hangi pattern + kritik nokta | 2-4 satır |
+| Handle metodu | Akış adımları + kritik teknik karar | 2-3 satır |
+| Entity sınıfı | Domain rolü + state machine varsa belirt | 2-3 satır |
+| Entity metodu | Hangi state geçişi + kim çağırır | 1-2 satır |
+| Worker/BackgroundService | Ne dinliyor + nasıl çalışıyor + crash recovery | 3-4 satır |
+| DbContext | Schema adı + neden izole | 1-2 satır |
+| Validator | Hangi command için + kritik kural varsa | 1 satır |
+| Interface | Soyutlama gerekçesi + implementasyonlar | 2 satır |
+| Extension/static class | Ne sağlıyor + nerede kullanılıyor | 1-2 satır |
+
+### Kritik metodlarda ekstra detay
+Redis operasyonu, lock, TTL, race condition, concurrency, atomiklik,
+transaction sınırı, at-least-once, idempotency gibi teknik kavramlar
+summary'de açıkça belirtilmeli.
+
+### Yasaklar
+- Sadece metod adını tekrar eden summary: "/// <summary>Reserve yapar.</summary>" ❌
+- Çok uzun summary (5+ satır) ❌
+- "Bu metod X'i çağırır" gibi implementation detayı ❌
+- İngilizce summary ❌
