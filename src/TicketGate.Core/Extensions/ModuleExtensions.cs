@@ -1,7 +1,9 @@
 using System.Reflection;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TicketGate.Core.Behaviors;
 using TicketGate.Core.Contracts;
 
 namespace TicketGate.Core.Extensions;
@@ -17,6 +19,18 @@ public static class ModuleExtensions
             services.AddSingleton<IModule>(module);
             module.RegisterServices(services, config);
         }
+
+        services.AddMediatR(configuration =>
+        {
+            foreach (var moduleAssembly in modules
+                .Select(module => module.GetType().Assembly)
+                .Distinct())
+            {
+                configuration.RegisterServicesFromAssembly(moduleAssembly);
+            }
+
+            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
+        });
 
         return services;
     }

@@ -1,44 +1,73 @@
-# HANDOFF.md - Session Gecis Ozeti
+# HANDOFF.md — Session Geçiş Şablonu
 
-## Son Handoff - 2026-05-13
+---
+
+## SON HANDOFF — 2026-05-14
 
 ### Proje
+TicketGate — bilet satış platformu
+.NET 10 · Modüler Monolith · Vertical Slice Architecture
+Repo: github.com/[kullanici]/TicketGate
 
-TicketGate - bilet satis platformu.
-.NET 10, Modular Monolith, Vertical Slice Architecture.
+### Bu Session'da Yapılanlar
+- Pre-production check çalıştırıldı
+- İlk build/test temizdi: 0 hata, 0 warning; 27 test geçti
+- AGENTS.md kural taramaları yapıldı
+- Duplicate `AddOpenBehavior` ihlali düzeltildi
+- MediatR validation pipeline merkezi `ModuleExtensions` kaydına taşındı
+- Booking, Payment, Notification için `IModule` implementasyonları eklendi
+- Identity/Event runtime schema adları const üzerinden kullanılacak şekilde düzeltildi
+- Son build/test tekrar temiz geçti
+- .agent/ dosyaları güncellendi
 
-### Bu Session'da Yapilanlar
+### Biten Görev
+Pre-production check ve kritik AGENTS.md ihlal düzeltmeleri
 
-- Mevcut calisma git'e commit edildi.
-- Ana commit: `ad645ff8139e3f4234adc5d7cf2f5426d8947fc9`
-- Ana commit `origin/main` branch'ine push edildi.
-- Docker PostgreSQL port cakismasi giderildi: host portu `55432`, container portu `5432`.
-- Identity migration, tablo ve unique index dogrulamalari tamamlandi.
-- Swagger ve `.http` dosyalari mevcut calismaya dahil edildi.
+### Yarım Kalan / Dikkat
+- Event modülü commit edilmedi
+- AddOpenBehavior merkezi kayıtta; modüllerde tekrar edilmemeli
+- Magic string grep'i EF migration, route ve table adlarını da yakalıyor; runtime schema kullanımı const'a taşındı
+- Docker PG host portu: 55432
 
-### Biten Gorev
+### Sıradaki Görev
+Yeni P3 (eski P4) — TicketGate.Gateway (Ocelot)
 
-Prompt 2.5 tamamlandi ve ilk repo commit'i atildi.
-
-### Yari Kalan / Dikkat
-
-- Host makinede lokal PostgreSQL `5432` dinliyor; Docker PostgreSQL icin `55432` kullanilmali.
-- EF CLI `10.0.5`, runtime `10.0.8`; tooling surumu daha sonra hizalanabilir.
-- Kafka/Debezium/Elasticsearch servisleri compose dosyasinda var, fakat bu asamada sadece postgres ve redis calistirildi.
-
-### Siradaki Gorev
-
-Prompt 2.5 ciktisini kontrol et. Sonra Prompt 3 - TicketGate.Event modulune gec.
-
-### Repo Durumu
-
-Bu session sonunda repo temiz olacak sekilde agent guncellemeleri de commit edilecek.
-
-### Yeni Session Baslangic Komutu
-
-```text
-Asagidaki dosyalari sirayla oku, 3-4 cumleyle ozetle, sonra goreve gec:
+### Yeni Session Başlangıç Komutu
+```
+Aşağıdaki dosyaları sırayla oku, 3-4 cümleyle özetle, sonra göreve geç:
 1. AGENTS.md
 2. .agent/MEMORY.md
 3. .agent/CONTEXT.md
 ```
+
+---
+
+## HANDOFF KULLANIM REHBERİ
+
+### Ne zaman üretilir?
+- Token limiti %60-70'e geldiğinde
+- Araç değiştirirken
+- Günlük çalışma bitişinde
+- Bir prompt tamamlandığında
+
+### Session sonu komutu (Codex'e söyle)
+```
+Bu session'ı bitiriyoruz.
+1. .agent/MEMORY.md → tamamlananlar ve yeni kararları ekle
+2. .agent/CONTEXT.md → aktif görevi ve sıradaki adımı güncelle
+3. .agent/HANDOFF.md → bu session özetini yaz
+```
+
+### Yeni session başlangıcı (tüm araçlar)
+```
+Aşağıdaki dosyaları sırayla oku, özetle, devam et:
+1. AGENTS.md
+2. .agent/MEMORY.md
+3. .agent/CONTEXT.md
+```
+
+### Araç notları
+- Codex CLI: AGENTS.md otomatik okunur, .agent/ dosyalarını ilk mesajda ver
+- Claude Code: CLAUDE.md → .agent/ dosyalarına referans ver
+- Cursor: .cursorrules → aynı yönlendirme
+- Web arayüzleri: HANDOFF.md içeriğini ilk mesaj olarak yapıştır

@@ -1,6 +1,5 @@
 using System.Text;
 using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
@@ -10,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using TicketGate.Core.Behaviors;
 using TicketGate.Core.Contracts;
 using TicketGate.Identity.Features.Auth.Endpoints;
+using TicketGate.Identity.Infrastructure;
 using TicketGate.Identity.Infrastructure.Persistence;
 
 namespace TicketGate.Identity;
@@ -27,7 +26,7 @@ public sealed class IdentityModule : IModule
         {
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
-                npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", "identity");
+                npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", IdentitySchema.Name);
             });
             options.UseSnakeCaseNamingConvention();
         });
@@ -78,12 +77,6 @@ public sealed class IdentityModule : IModule
                     []
                 }
             });
-        });
-
-        services.AddMediatR(configuration =>
-        {
-            configuration.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);

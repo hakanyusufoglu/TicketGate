@@ -7,6 +7,21 @@ namespace TicketGate.Core.Extensions;
 
 public static class ResultExtensions
 {
+    public static IResult ToHttpResult(this Result result, int successCode = StatusCodes.Status204NoContent)
+    {
+        if (result.IsSuccess)
+        {
+            return HttpResults.StatusCode(successCode);
+        }
+
+        var error = result.Error ?? new AppError(
+            AppErrorType.Internal,
+            "internal.unexpected_error",
+            "An unexpected error occurred.");
+
+        return ToProblemResult(error);
+    }
+
     public static IResult ToHttpResult<T>(this Result<T> result, int successCode = StatusCodes.Status200OK)
     {
         if (result.IsSuccess)
@@ -47,7 +62,7 @@ public static class ResultExtensions
         {
             AppErrorType.NotFound => StatusCodes.Status404NotFound,
             AppErrorType.Conflict => StatusCodes.Status409Conflict,
-            AppErrorType.Validation => StatusCodes.Status400BadRequest,
+            AppErrorType.Validation => StatusCodes.Status422UnprocessableEntity,
             AppErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
             _ => StatusCodes.Status500InternalServerError
         };

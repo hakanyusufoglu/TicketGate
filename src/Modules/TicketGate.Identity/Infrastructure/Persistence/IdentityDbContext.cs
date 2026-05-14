@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Identity.Domain.Entities;
+using TicketGate.Identity.Infrastructure;
 
 namespace TicketGate.Identity.Infrastructure.Persistence;
 
@@ -11,7 +12,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("identity");
+        modelBuilder.HasDefaultSchema(IdentitySchema.Name);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
     }
 }

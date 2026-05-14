@@ -1,37 +1,69 @@
 # TicketGate — AGENTS.md
-# Codex ve tüm AI araçları için tek kaynak of truth.
+# Tüm AI araçları için tek kaynak of truth.
 # Her yeni feature yazmadan önce bu dosyayı oku.
 
 ## Proje özeti
 Bilet satış ve rezervasyon platformu. Modüler Monolith, tek deployment, ileride servise ayrılabilir sınırlar.
+Linux ortamında Docker Compose ile çalışır. Ocelot API Gateway üzerinden dışarıya açılır.
 
 ## Stack
 - .NET 10 (LTS) · Minimal API · C# 14
-- PostgreSQL 16 + EF Core 9 (Npgsql) · snake_case naming convention
+- PostgreSQL 16 + EF Core 10 (Npgsql) · snake_case naming convention
 - MediatR 12 · FluentValidation 11
 - StackExchange.Redis (Lock + SortedSet + Pub/Sub)
+- Ocelot API Gateway (rate limit, auth, routing, load balance config)
 - Debezium + Kafka (CDC → Elasticsearch log pipeline)
-- Elasticsearch 8 + Kibana
-- Docker Compose (local dev)
+- Elasticsearch 8 + Kibana (log analizi)
+- Prometheus + Grafana (metrik ve alert)
+- Serilog (structured logging)
+- Docker Compose (Linux deployment)
 
 ## Solution yapısı
 ```
 TicketGate.sln
 ├── src/
-│   ├── TicketGate.API              ← tek host; tüm modülleri register eder
-│   ├── TicketGate.Core             ← shared kernel; NuGet değil ProjectReference
+│   ├── TicketGate.Gateway          ← Ocelot; dışarıya açık tek giriş noktası (port 5000)
+│   ├── TicketGate.API              ← Minimal API host; iç network, dışarıya kapalı (port 5001)
+│   ├── TicketGate.Core             ← Shared kernel; ProjectReference, NuGet değil
 │   └── Modules/
 │       ├── TicketGate.Identity
-│       ├── TicketGate.Event
-│       ├── TicketGate.Booking      ← kritik; Redis Lock + TTL + WaitingRoom
+│       ├── TicketGate.Event        ← TAMAMLANDI
+│       ├── TicketGate.Booking      ← Redis Lock + TTL + WaitingRoom
 │       ├── TicketGate.Payment      ← Outbox pattern zorunlu
-│       └── TicketGate.Notification ← SSE endpoint + Redis Pub/Sub consumer
-└── tests/
-    ├── TicketGate.Identity.Tests
-    ├── TicketGate.Event.Tests
-    ├── TicketGate.Booking.Tests
-    └── TicketGate.Payment.Tests
+│       └── TicketGate.Notification ← SSE + Redis Pub/Sub
+├── tests/
+│   ├── TicketGate.Identity.Tests
+│   ├── TicketGate.Event.Tests      ← TAMAMLANDI
+│   ├── TicketGate.Booking.Tests
+│   └── TicketGate.Payment.Tests
+└── infrastructure/
+    ├── docker/          → docker-compose.yml
+    ├── postgres/        → init.sql
+    ├── debezium/        → connector-config.json
+    ├── elasticsearch/   → index template
+    ├── prometheus/      → prometheus.yml
+    └── grafana/         → dashboard json'ları
 ```
+
+## Ağ mimarisi
+```
+Internet
+    ↓
+TicketGate.Gateway (Ocelot) — port 5000, dışarıya açık
+    ↓
+TicketGate.API — port 5001, sadece iç network (dışarıya kapalı)
+    ↓
+PostgreSQL · Redis · Kafka · Elasticsearch
+```
+TicketGate.API docker-compose'da dışarıya port expose etmez.
+Tüm dış trafik Gateway üzerinden geçer.
+
+## Bilinen ortam notları
+- Docker PostgreSQL host portu: 55432 (lokal Windows PostgreSQL 5432 ile çakışmaması için)
+- EF CLI: 10.0.5, runtime: 10.0.8 — migration çalışıyor, tooling ilerleyen fazda hizalanacak
+- Şu an sadece postgres ve redis çalışıyor; kafka/debezium/elasticsearch sonraki fazlarda
+
+---
 
 ## Mimari kurallar (DEĞİŞTİRİLEMEZ)
 
@@ -46,18 +78,33 @@ TicketGate.sln
 - Handler başka handler çağırmaz
 - Domain içinde DbContext kullanılmaz
 - Query handler'lara validator eklenmez
-- Gereksiz yorum YASAK — "ne yaptığını" anlatan yorum yazılmaz; yalnızca "neden" gerekiyorsa
+- Gereksiz yorum YASAK — yalnızca "neden" gerekiyorsa
 
 ### Modüller arası iletişim
 - Direkt proje referansı YASAK — modüller birbirini import etmez
 - İletişim: `MediatR INotification` (domain event) üzerinden
-- Örnek: `BookingConfirmed` eventi → Payment + Notification handler'ları aynı anda tetiklenir
 - Gelecekte Kafka'ya taşınabilir olacak şekilde interface arkasında tutulur
 
 ### Her modülün kendi
 - `DbContext`'i vardır (kendi schema'sında)
 - `IModule` implementasyonu vardır
 - Migration'ları vardır (`--project` flag ile ayrı üretilir)
+
+### Gateway kuralları (Ocelot)
+- Rate limiting: IP bazlı, endpoint bazlı konfigüre edilir
+- JWT validation Gateway'de yapılır — API tekrar validate etmez
+- Load balancing: RoundRobin config hazır, replicas: 1 ile başlar
+- Her downstream route ocelot.json'da tanımlıdır
+- Circuit breaker: Polly ile entegre
+
+### Logging kuralları (Serilog)
+- Structured logging zorunlu — string interpolation ile log YASAK
+- Her request'te CorrelationId bulunur (X-Correlation-Id header)
+- Hassas veri (şifre, token, kart no) loglarda YASAK
+
+### MediatR pipeline kaydı
+- `AddOpenBehavior(typeof(ValidationBehavior<,>))` yalnızca bir kez merkezi olarak kaydedilir
+- Her modülde tekrar kaydetme — duplicate validation pipeline oluşur
 
 ---
 
@@ -72,8 +119,9 @@ TicketGate.sln
 | DTO | `{Entity}{Qualifier}Dto` | `TicketDetailDto` |
 | Domain Event | `{Entity}{Action}` | `TicketReserved` |
 | Endpoint dosyası | `{Entity}Endpoints.cs` | `TicketEndpoints.cs` |
-| Redis key | `{entity}:{id}:{detail}` | `ticket:42:lock` |
+| Redis key | `{entity}:{id}:{detail}` | `ticket:uuid:lock` |
 | Kafka topic | `db.{module}.{table}` | `db.booking.tickets` |
+| Correlation ID header | `X-Correlation-Id` | — |
 
 ---
 
@@ -93,61 +141,58 @@ State geçişleri yalnızca `Booking` modülünde yapılır.
 
 ## Redis kullanım kuralları
 
-### Lock (Redlock)
+### Lock
 ```
 Key   : ticket:{ticketId}:lock
 Value : {userId}
 NX EX : 600 (saniye)
 ```
-- `SETNX` başarısız → `409 Conflict` döndür
-- TTL expire → keyspace notification → `TicketLockExpiredWorker` tetiklenir
+- SETNX başarısız → 409 Conflict
+- TTL expire → keyspace notification → TicketLockExpiredWorker
 
 ### Waiting Room (Sorted Set)
 ```
-Key   : waitingroom:{eventId}
-Score : Unix timestamp (giriş sırası)
-Member: {userId}
+Key    : waitingroom:{eventId}
+Score  : Unix timestamp ms
+Member : {userId}
 ```
-- `ZADD waitingroom:{eventId} {ts} {userId}` — kuyruğa ekle
-- `ZRANK waitingroom:{eventId} {userId}` — pozisyon öğren
-- `ZPOPMIN waitingroom:{eventId} {batchSize}` — dispatcher kullanır
+- ZADD NX — ilk giriş zamanı korunur
+- ZRANK → pozisyon
+- ZPOPMIN → dispatcher batch alır
 
 ### SSE Pub/Sub
 ```
-Channels:
-  seat:{ticketId}:status   → koltuk durum değişikliği
-  queue:{userId}:turn      → sıra geldi bildirimi
+seat:{ticketId}:status   → koltuk durum değişikliği
+queue:{userId}:turn      → sıra geldi bildirimi
 ```
 
 ---
 
 ## Outbox pattern (Payment modülünde zorunlu)
 
-1. `InitiatePayment` handler: tek transaction içinde hem `Payment` kaydı hem `OutboxMessage` yazar
-2. `OutboxWorker` (IHostedService): `outbox.messages` tablosunu 5sn polling ile okur
-3. Worker harici gateway'i (Stripe/PayPal) çağırır, sonucu yazar
-4. Başarılı → `OutboxMessage.ProcessedAt` doldurulur, `BookingConfirmed` eventi publish edilir
-5. Başarısız → retry count artırılır, max 3 retry sonrası `Dead Letter` olarak işaretlenir
+1. Handler: tek transaction → Payment + OutboxMessage
+2. OutboxWorker (IHostedService): 5sn polling, batch 10
+3. Worker harici gateway'i (Stripe/PayPal) çağırır
+4. Başarılı → ProcessedAt doldurulur, BookingConfirmed event publish edilir
+5. Başarısız → RetryCount++ (max 3) → Dead Letter
 
 ---
 
 ## CDC pipeline
 
-- `wal_level = logical` PostgreSQL'de aktif olmalı
-- Debezium connector: `booking`, `payment` schema'larını izler (`outbox` schema izlenmez)
-- Kafka topics: `db.booking.tickets`, `db.booking.reservations`, `db.payment.payments`
-- Kafka Connect Elasticsearch Sink → index: `ticketgate-{topic}-{yyyy.MM}`
+- wal_level = logical PostgreSQL'de aktif
+- Debezium: booking + payment schema izler (outbox izlenmez)
+- Kafka topics: db.booking.tickets, db.payment.payments
+- Elasticsearch Sink → index: ticketgate-{topic}-{yyyy.MM}
 
 ---
 
 ## SSE endpoint kuralları
 
-- `GET /api/v1/sse/queue/{eventId}` → waiting room pozisyon stream
-- `GET /api/v1/sse/ticket/{ticketId}` → koltuk durum stream
-- `Content-Type: text/event-stream`
-- `Last-Event-ID` header desteklenmeli (reconnect için)
-- Her SSE bağlantısı Redis Pub/Sub kanalına subscribe olur
-- Sticky session veya Redis üzerinden fan-out zorunlu
+- Content-Type: text/event-stream
+- Last-Event-ID header desteklenmeli (reconnect için)
+- Heartbeat: 15 saniyede bir
+- Redis Pub/Sub fan-out — çoklu instance hazır
 
 ---
 
@@ -162,40 +207,42 @@ Channels:
 | DELETE | 204 | 404 |
 | Ticket lock çakışması | — | 409 |
 | TTL dolmadan ikinci reserve | — | 409 |
+| Rate limit aşımı | — | 429 |
+| Gateway auth hatası | — | 401 |
 
 ---
 
 ## Yeni feature eklerken kontrol listesi
 
-1. `Features/{Entity}/Commands/{Action}{Entity}/` veya `Queries/Get{Entity}.../` klasörü aç
-2. Command/Query record yaz — `IRequest<Result<T>>`
-3. Handler yaz — `internal sealed class`, `CancellationToken ct` zorunlu
+1. Features/{Entity}/Commands/{Action}/ veya Queries/Get{Entity}/ klasörü aç
+2. Command/Query record yaz — IRequest<Result<T>>
+3. Handler yaz — internal sealed, CancellationToken ct zorunlu
 4. Validator ekle (yalnızca Command için)
-5. `{Entity}Endpoints.cs`'e endpoint ekle — `ToHttpResult()` kullan
-6. `IModule.MapEndpoints()` içinde register et
-7. Migration: `dotnet ef migrations add {Action}_{Entity}_{Detail} --project src/Modules/TicketGate.{Module}`
-8. Handler unit test yaz
-9. Projection-first kontrol et — gereksiz `Include` var mı?
-10. `CancellationToken` tüm async çağrılara iletildi mi?
+5. {Entity}Endpoints.cs'e endpoint ekle — ToHttpResult() kullan
+6. IModule.MapEndpoints() içinde register et
+7. ocelot.json'a route ekle (Gateway tamamlandıktan sonra)
+8. Migration: --project ile modül bazlı
+9. Handler unit test yaz
+10. Projection-first kontrol — gereksiz Include var mı?
+11. CancellationToken tüm async çağrılara iletildi mi?
 
 ---
 
 ## Session yönetimi (tüm araçlar için)
 
 ### Her session BAŞINDA
-1. Bu dosyayı (AGENTS.md) oku — mimari kurallar
-2. `.agent/MEMORY.md` oku — ne bitti, hangi kararlar alındı
-3. `.agent/CONTEXT.md` oku — aktif görev, sıradaki adım
-4. Okuduğunu kısaca özetle, sonra göreve geç
+1. AGENTS.md oku — mimari kurallar
+2. .agent/MEMORY.md oku — ne bitti, kararlar
+3. .agent/CONTEXT.md oku — aktif görev
+4. Okuduğunu özetle, göreve geç
 
 ### Her session SONUNDA
-1. `.agent/MEMORY.md` güncelle — yeni tamamlananlar, yeni kararlar
-2. `.agent/CONTEXT.md` güncelle — aktif görevi ve sıradaki adımı yaz
-3. `.agent/HANDOFF.md` güncelle — bu session'ın kısa özeti
+1. .agent/MEMORY.md güncelle
+2. .agent/CONTEXT.md güncelle
+3. .agent/HANDOFF.md güncelle
 
 ### Context %60-70'e geldiğinde
-Beklemeden session'ı kapat, üç dosyayı güncelle, yeni session aç.
-Yeni session'da ilk mesaj: "AGENTS.md, .agent/MEMORY.md ve .agent/CONTEXT.md oku, özetle, devam et."
+Session'ı kapat, dosyaları güncelle, yeni session aç.
 
 ---
 
@@ -211,13 +258,14 @@ Yeni session'da ilk mesaj: "AGENTS.md, .agent/MEMORY.md ve .agent/CONTEXT.md oku
 ❌ Domain içinde DbContext
 ❌ Endpoint içinde iş mantığı
 ❌ Query handler'a validator ekleme
-❌ Gereksiz Include (projection navigation'ı çözüyor olabilir)
 ❌ Magic string (const veya enum kullan)
 ❌ CancellationToken atlamak
 ❌ Production'da db.Database.MigrateAsync()
-❌ IgnoreQueryFilters() normal handler'larda
 ❌ Core'a domain veya feature kodu eklemek
-❌ Pessimistic lock içinde dış servis çağrısı (Stripe vs)
 ❌ Redis Lock olmadan ticket reserve etmek
 ❌ Outbox olmadan Payment → dış gateway çağırmak
+❌ Serilog string interpolation ile log yazmak
+❌ Hassas veri loglara yazmak
+❌ TicketGate.API'yi dışarıya port expose etmek
+❌ Her modülde AddOpenBehavior tekrar kaydetmek
 ```

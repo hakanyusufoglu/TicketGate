@@ -1,56 +1,57 @@
-# CONTEXT.md - Aktif Session Durumu
+# CONTEXT.md — Aktif Session Durumu
+# Her session başında oku. Session sonunda güncelle.
 
-Her session basinda AGENTS.md ve MEMORY.md ile birlikte okunur.
+## Aktif Görev
+Yeni P3 — TicketGate.Gateway (Ocelot) implementasyonu
 
-## Aktif Gorev
+## Mevcut Durum
+Pre-production check tamamlandı.
+Build ve test temiz:
+- `dotnet build TicketGate.sln --no-restore -v minimal` → 0 hata, 0 warning
+- `dotnet test TicketGate.sln --no-build` → 27 test geçti
 
-Prompt 2.5 tamamlandi. Ilk commit atildi ve `origin/main` branch'ine push edildi.
+AGENTS.md kritik ihlalleri düzeltildi:
+- `AddOpenBehavior(typeof(ValidationBehavior<,>))` tek merkezi kayda taşındı: `TicketGate.Core/Extensions/ModuleExtensions.cs`
+- Booking, Payment, Notification modüllerine `IModule` implementasyonu eklendi
+- Identity/Event runtime schema literal'leri schema const üzerinden kullanılıyor
 
-## Son Yapilanlar
+Check sonucu production'a geçiş için temiz. Gateway yeni P3 olarak devam edecek.
 
-- Docker PostgreSQL host portu `55432` olarak degistirildi.
-- `appsettings.Development.json` connection string portlari `55432` olarak guncellendi.
-- Identity migration olusturuldu ve uygulandi.
-- `identity.users` ve `identity.refresh_tokens` tablolari dogrulandi.
-- Email ve refresh token unique indexleri dogrulandi.
-- Swagger Development ortaminda JWT Bearer destegiyle aciliyor.
-- `src/TicketGate.API/Http/identity.http` ve `http-client.env.json` olusturuldu.
-- README baslangic adimlari guncellendi.
+## Neden Gateway Önce?
+Foundation katmanı (Gateway, Serilog, Health Checks, Testcontainers) modül kodlarından önce gelmeli.
+Bu katman olmadan yazılan kod production'da eksik kalır — logging yok, rate limit yok, integration test yok.
 
-## Prompt 2.5 Kontrol Sonuclari
+## Sıradaki Adımlar
+1. TicketGate.Gateway projesi oluştur (ayrı .csproj)
+2. Ocelot + Polly NuGet paketleri
+3. ocelot.json — tüm mevcut route'lar (identity, event)
+4. Rate limiting — endpoint bazlı kurallar
+5. JWT validation Gateway'de
+6. Load balancing config (RoundRobin, replicas:1, scale için hazır)
+7. Circuit breaker (Polly)
+8. docker-compose güncelle:
+   - Gateway: port 5000 dışarıya açık
+   - API: port 5001 sadece iç network, expose etme
+9. event.http ve identity.http URL'lerini Gateway üzerinden güncelle
 
-- [x] `docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis` calisiyor
-- [x] Identity migration olusturuldu (`Init_Identity`)
-- [x] `dotnet ef database update` host uzerinden calisiyor
-- [x] `identity.users` ve `identity.refresh_tokens` tablolari olustu
-- [x] `ix_users_email` unique index olustu
-- [x] `ix_refresh_tokens_token` unique index olustu
-- [x] Swagger JWT destegiyle aciliyor (`/swagger`)
-- [x] `src/TicketGate.API/Http/identity.http` olusturuldu
-- [x] `src/TicketGate.API/Http/http-client.env.json` olusturuldu
-- [x] README guncellendi
-- [x] `dotnet build TicketGate.sln` basarili
-- [x] `dotnet test TicketGate.sln --no-build` basarili
+## Tamamlanmış (bu session öncesi)
+- P1 ✅ P2 ✅ P2.5 ✅ P3(Event) ✅
+- Event modülü commit edilmedi — Gateway ile birlikte commit atılacak
 
-## Siradaki Adim
+## Dikkat Edilecekler
+- AddOpenBehavior merkezi kayıtta — modüllerde tekrar etme
+- Docker PostgreSQL host portu: 55432
+- API hiçbir zaman dışarıya port expose etmez
+- Şimdilik tek instance, scale config ocelot.json'da hazır ama kapalı
 
-Prompt 2.5 ciktisini kontrol et. Ardindan Prompt 3 - TicketGate.Event modulu implementasyonuna gec.
-
-## Siradaki Prompt
-
-Prompt 3 - Event Modulu
-
-Beklenen kapsam:
-- Event, Venue, Performer entity'leri
-- CreateEvent, UpdateEvent, PublishEvent command'lari
-- GetEventById, GetEventList query'leri
-- CreateVenue, GetVenueById
-- Event module DbContext, migration, endpoints ve testler
-
-## Dikkat
-
-- Program.cs sadece `AddModules(builder.Configuration)`, `Build`, `MapModules`, `Run` icermeli.
-- Yeni module kayitlari ilgili `IModule` implementasyonu icinde yapilmali.
-- Query handler'lara validator eklenmemeli.
-- Exception ile beklenen hata yonetimi yapilmamali; `Result<T>` donmeli.
-- Docker PostgreSQL icin host portu `55432`, container portu `5432`.
+## Aktif Dosyalar (bu promptta değişecekler)
+```
+src/TicketGate.Gateway/              ← yeni proje
+  Program.cs
+  ocelot.json
+  TicketGate.Gateway.csproj
+infrastructure/docker/docker-compose.yml  ← gateway eklenir, API port kaldırılır
+src/TicketGate.API/Http/identity.http     ← URL güncellenir
+src/TicketGate.API/Http/event.http        ← URL güncellenir
+TicketGate.sln                            ← yeni proje eklenir
+```
