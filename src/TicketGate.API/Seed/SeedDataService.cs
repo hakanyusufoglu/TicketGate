@@ -30,17 +30,45 @@ public static class SeedDataService
     }
 
     /// <summary>
-    /// Volkswagen Arena venue kaydini yeni SeatMap hiyerarsisiyle olusturur.
-    /// Kayit zaten varsa tekrar eklemeden atlar.
+    /// Volkswagen Arena venue kaydini yeni SeatMap hiyerarsisiyle olusturur veya eski formattaysa gunceller.
+    /// Development verisi idempotent kalir ama mevcut eski JSON formatini yeni typed SeatMap'e tasir.
     /// </summary>
     private static async Task SeedVenueAsync(EventDbContext db)
     {
-        if (await db.Venues.AnyAsync(venue => venue.Id == SeedGuids.VenueId))
+        var seatMap = CreateSeedSeatMap();
+        var existingVenue = await db.Venues
+            .FirstOrDefaultAsync(venue => venue.Id == SeedGuids.VenueId);
+
+        if (existingVenue is not null)
         {
+            if (ShouldUpdateSeatMap(existingVenue.SeatMap, seatMap))
+            {
+                existingVenue.UpdateSeatMap(seatMap);
+                await db.SaveChangesAsync();
+                Console.WriteLine("[Seed] Venue seat map guncellendi: Volkswagen Arena");
+            }
+
             return;
         }
 
-        var seatMap = new SeatMap
+        var venue = Venue.Create(
+            "Volkswagen Arena",
+            "Istanbul, Turkiye",
+            seatMap);
+
+        db.Venues.Add(venue);
+        SetEntityId(db, venue, SeedGuids.VenueId);
+        await db.SaveChangesAsync();
+        Console.WriteLine("[Seed] Venue olusturuldu: Volkswagen Arena");
+    }
+
+    /// <summary>
+    /// Development ortaminda kullanilacak 50 koltuklu seed SeatMap bilgisini olusturur.
+    /// Ticket generation bu hiyerarsiden VIP/NORMAL/EKONOMI fiyat gruplarini uretir.
+    /// </summary>
+    private static SeatMap CreateSeedSeatMap()
+    {
+        return new SeatMap
         {
             Sections =
             [
@@ -73,16 +101,25 @@ public static class SeedDataService
                     Price: 150m)
             ]
         };
+    }
 
-        var venue = Venue.Create(
-            "Volkswagen Arena",
-            "Istanbul, Turkiye",
-            seatMap);
+    /// <summary>
+    /// Mevcut SeatMap'in seed hedefiyle ayni temel kapasite ve section yapisinda olup olmadigini kontrol eder.
+    /// Eski rows/columns JSON formati deserialize edilince bos SeatMap'e dustugu icin otomatik guncellenir.
+    /// </summary>
+    private static bool ShouldUpdateSeatMap(SeatMap currentSeatMap, SeatMap seedSeatMap)
+    {
+        var currentSectionIds = currentSeatMap.Sections
+            .Select(section => section.Id)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var seedSectionIds = seedSeatMap.Sections
+            .Select(section => section.Id)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 
-        db.Venues.Add(venue);
-        SetEntityId(db, venue, SeedGuids.VenueId);
-        await db.SaveChangesAsync();
-        Console.WriteLine("[Seed] Venue olusturuldu: Volkswagen Arena");
+        return currentSeatMap.TotalCapacity != seedSeatMap.TotalCapacity ||
+            !currentSectionIds.SequenceEqual(seedSectionIds);
     }
 
     /// <summary>

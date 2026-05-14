@@ -40,4 +40,13 @@ public sealed class Venue
             location.Trim(),
             seatMap);
     }
+
+    /// <summary>
+    /// Mekan koltuk haritasini yeni section/row/seat formatina gunceller.
+    /// Development seed eski JSON formatindan typed SeatMap formatina gecis icin kullanir.
+    /// </summary>
+    public void UpdateSeatMap(SeatMap seatMap)
+    {
+        SeatMap = seatMap;
+    }
 }
