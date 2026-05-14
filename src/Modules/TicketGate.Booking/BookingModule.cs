@@ -9,6 +9,7 @@ using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Features.Tickets.Endpoints;
 using TicketGate.Booking.Infrastructure;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Workers;
 using TicketGate.Core.Contracts;
 
 namespace TicketGate.Booking;
@@ -41,6 +42,8 @@ public sealed class BookingModule : IModule
             ConnectionMultiplexer.Connect(redisConnectionString ?? "localhost:6379"));
 
         services.Configure<BookingSettings>(config.GetSection(BookingSettings.SectionName));
+
+        services.AddHostedService<TicketLockExpiredWorker>();
 
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }

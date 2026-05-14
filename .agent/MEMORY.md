@@ -134,3 +134,10 @@
 - [x] JwtSettings eklendi; access token, refresh token ve clock skew sureleri config'e tasindi.
 - [x] OutboxSettings ve SseSettings options siniflari eklendi; ileride worker/heartbeat magic number kullanmadan baglanacak.
 - [x] appsettings.json ve appsettings.Development.json BookingSettings, OutboxSettings ve SseSettings ile guncellendi.
+
+## 2026-05-14 TicketLockExpiredWorker Notu
+
+- [x] TicketLockExpiredWorker tamamlandi
+- [x] Lock dongusu tamamlandi
+- [x] Redis keyspace expired event'i ticket:{id}:lock formatinda dinleniyor
+- [x] Startup crash recovery ile suresi gecmis Reserved ticket'lar Available'a cekiliyor

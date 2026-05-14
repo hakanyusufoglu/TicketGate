@@ -1,3 +1,27 @@
+## SON HANDOFF � 2026-05-14 TicketLockExpiredWorker
+
+### Proje
+TicketGate � bilet satis platformu
+.NET 10 � Moduler Monolith � Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- TicketLockExpiredWorker eklendi.
+- Worker Redis __keyevent@0__:expired kanalini dinliyor ve yalnizca ticket:{id}:lock formatindaki expired key'leri isliyor.
+- TTL expire olunca ilgili Reserved ticket Release() ile Available durumuna aliniyor.
+- Startup crash recovery taramasi LockTtlSeconds suresini asmis Reserved ticket'lari temizliyor.
+- BookingModule icinde AddHostedService<TicketLockExpiredWorker>() kaydi yapildi.
+- TicketLockExpiredWorker integration testleri eklendi: Redis keyspace notification ve startup recovery dogrulandi.
+- booking.http icine TTL sonrasi status kontrol senaryosu eklendi.
+
+### Dikkat
+- Redis notify-keyspace-events = KEx docker-compose ve Testcontainers Redis command'inde aktif.
+- TicketReleased event contract'i mevcut haliyle UserId tasiyor; worker release oncesi LockedByUserId degerini yakalayip publish ediyor.
+- Seat bilgisinin SSE icin event'e eklenmesi istenirse TicketReleased contract'i ayri ve bilincli bir degisiklikle genisletilmeli.
+
+### Siradaki Gorev
+P7 � Booking Virtual Waiting Room
+
+---
 ## SON HANDOFF � 2026-05-14 Configuration Refactor
 
 ### Proje
@@ -178,5 +202,6 @@ Aşağıdaki dosyaları sırayla oku, özetle, devam et:
 - Claude Code: CLAUDE.md → .agent/ dosyalarına referans ver
 - Cursor: .cursorrules → aynı yönlendirme
 - Web arayüzleri: HANDOFF.md içeriğini ilk mesaj olarak yapıştır
+
 
 

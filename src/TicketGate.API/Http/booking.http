@@ -57,6 +57,19 @@ Content-Type: application/json
 # Expected: HTTP 200 OK
 GET {{baseUrl}}/api/v1/tickets/{{ticketId}}
 
+### GetTicketById (reserve sonrasi Reserved kontrolu -> 200)
+# Expected: HTTP 200 OK, status Reserved
+GET {{baseUrl}}/api/v1/tickets/{{ticketId}}
+
+# TTL dolunca worker Redis expired event'i yakalar ve ticket'i Available'a ceker.
+# Manuel kisa test icin Redis CLI:
+# redis-cli -p 6379 TTL ticket:{guid}:lock
+# redis-cli -p 6379 SET ticket:{guid}:lock {userId} EX 10
+
+### GetTicketById (TTL sonrasi Available kontrolu -> 200)
+# Expected: HTTP 200 OK, status Available
+GET {{baseUrl}}/api/v1/tickets/{{ticketId}}
+
 ### GetTicketById (bulunamadi -> 404)
 # Expected: HTTP 404 Not Found
 GET {{baseUrl}}/api/v1/tickets/{{missingTicketId}}

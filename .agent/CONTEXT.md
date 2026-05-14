@@ -2,9 +2,9 @@
 # Her session başında oku. Session sonunda güncelle.
 
 ## Aktif Görev
-P6 — Booking Virtual Waiting Room
+P7 � Booking Virtual Waiting Room
 
-## Neden P6 Şimdi?
+## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandı. Booking modülünde
 Ticket entity, xmin concurrency, Redis SETNX lock, Reserve/Confirm/Cancel
 sliceları, query endpointleri, Init_Tickets migration ve integration testleri hazır.
@@ -19,7 +19,7 @@ ve published Event kaydı idempotent olarak oluşturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapıldı
 
 ## Sıradaki Prompt
-P6 — Booking: Virtual Waiting Room
+P7 � Booking: Virtual Waiting Room
 
 ## Çıkarılan Promptlar (ve neden)
 - Ocelot Gateway → monolith'te gereksiz; microservice'e geçince
@@ -39,3 +39,7 @@ Seat map JSON yapisi typed Core SeatMap value object'ine tasindi. Event Venue js
 
 ## Son Tamamlanan Ara Gorev
 Magic number konfigurasyon refactor'u baslatildi. Booking Redis lock TTL, Jwt token sureleri, Outbox polling/batch/retry ve SSE heartbeat degerleri strongly-typed options ve appsettings uzerinden yonetilecek sekilde guncellendi. appsettings degerleri numeric tutuldu; kod tarafinda TimeSpan donusumu options degerlerinden yapiliyor.
+
+## Son Tamamlanan Ara Gorev
+TicketLockExpiredWorker tamamlandi. Redis keyspace expired event'i ticket lock anahtarlarini dinliyor, TTL dolunca Reserved ticket'i Available'a cekiyor ve startup crash recovery taramasi suresi gecmis Reserved ticket'lari temizliyor. Lock dongusu ReserveTicket ile baslayip Redis TTL expire sonrasi Postgres state cleanup ile tamamlandi.
+
