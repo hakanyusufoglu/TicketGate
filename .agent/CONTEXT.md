@@ -2,12 +2,12 @@
 # Her session başında oku. Session sonunda güncelle.
 
 ## Aktif Görev
-P5 — Booking modülü
+P6 — Booking Virtual Waiting Room
 
-## Neden P5 Şimdi?
-P4 Testcontainers altyapısı tamamlandı. Booking modülündeki xmin concurrency
-ve Redis SETNX race condition testleri artık gerçek PostgreSQL ve Redis
-container'ları üzerinde yazılabilir.
+## Neden P6 Şimdi?
+P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandı. Booking modülünde
+Ticket entity, xmin concurrency, Redis SETNX lock, Reserve/Confirm/Cancel
+sliceları, query endpointleri, Init_Tickets migration ve integration testleri hazır.
 
 ## P4 Son Durum
 - [x] tests/TicketGate.TestInfrastructure projesi eklendi
@@ -17,7 +17,7 @@ container'ları üzerinde yazılabilir.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapıldı
 
 ## Sıradaki Prompt
-P5 — Booking: Ticket + ReserveTicket + Redis Lock
+P6 — Booking: Virtual Waiting Room
 
 ## Çıkarılan Promptlar (ve neden)
 - Ocelot Gateway → monolith'te gereksiz; microservice'e geçince

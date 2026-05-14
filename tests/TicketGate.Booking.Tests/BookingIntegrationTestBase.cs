@@ -1,19 +1,49 @@
+using FluentValidation;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
+using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.TestInfrastructure;
 
 namespace TicketGate.Booking.Tests;
 
 /// <summary>
-/// Booking modülü integration testleri için base sınıf.
-/// Modül henüz domain servislerini içermediği için şimdilik ortak PostgreSQL ve Redis bağlantılarını sağlar.
+/// Booking modulu integration testleri icin base sinif.
+/// Gercek PostgreSQL ve Redis baglantilariyla xmin concurrency ve Redis SETNX davranislari dogrulanir.
 /// </summary>
 public abstract class BookingIntegrationTestBase : IntegrationTestBase
 {
     /// <summary>
-    /// Booking testleri için gerekli servisleri kaydeder.
-    /// BookingDbContext ve MediatR kayıtları P5 kapsamında domain kodu geldiğinde bu sınıfa eklenecektir.
+    /// Booking testleri icin DbContext, Redis, MediatR ve validator kayitlarini kurar.
+    /// Handler testleri production module registration'a bagimli kalmadan gercek altyapi uzerinde calisir.
     /// </summary>
     protected override void ConfigureServices(IServiceCollection services)
     {
+        services.AddDbContext<BookingDbContext>(options =>
+        {
+            options.UseNpgsql(PostgresConnectionString);
+            options.UseSnakeCaseNamingConvention();
+        });
+
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+            ConnectionMultiplexer.Connect(RedisConnectionString));
+
+        services.AddLogging();
+
+        services.AddMediatR(configuration =>
+            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly));
+
+        services.AddValidatorsFromAssembly(typeof(BookingModule).Assembly, includeInternalTypes: true);
+    }
+
+    /// <summary>
+    /// Booking migration'larini test veritabanina uygular.
+    /// Gercek schema ve xmin token konfigurasyonu olmadan concurrency testleri anlamli sonuc vermez.
+    /// </summary>
+    protected override async Task ApplyMigrationsAsync(IServiceProvider services)
+    {
+        var db = services.GetRequiredService<BookingDbContext>();
+        await db.Database.MigrateAsync();
     }
 }

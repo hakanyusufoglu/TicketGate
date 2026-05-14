@@ -2,6 +2,35 @@
 
 ---
 
+## SON HANDOFF — 2026-05-14 P5
+
+### Proje
+TicketGate — bilet satış platformu
+.NET 10 · Modüler Monolith · Vertical Slice Architecture
+
+### Bu Session'da Yapılanlar
+- TicketGate.Booking P5 implement edildi: Ticket entity, TicketStatus enum, Booking domain eventleri
+- BookingDbContext, TicketConfiguration, booking schema ve Init_Tickets migration eklendi
+- ReserveTicket, ConfirmTicket, CancelTicket command sliceları eklendi
+- GetTicketById ve GetAvailableSeats query sliceları projection-first olarak eklendi
+- TicketEndpoints ve BookingModule servis/endpoint kayıtları tamamlandı
+- BookingIntegrationTestBase gerçek PostgreSQL/Redis, MediatR, validator ve migration çalıştıracak şekilde dolduruldu
+- ReserveTicket integration testleri eklendi; Redis SETNX race condition ve lock cleanup doğrulandı
+- booking.http eklendi
+
+### Biten Görev
+P5 — Booking: Ticket + ReserveTicket + Redis Lock
+
+### Dikkat
+- Npgsql EF Core 10'da eski UseXminAsConcurrencyToken extension'ı yok; aynı isimli local extension shadow xmin row-version mapping yapıyor.
+- Testcontainers testleri assembly seviyesinde seri çalışıyor; paralel çalıştırmak Docker readiness timeout üretebiliyor.
+- NuGet restore sırasında Testcontainers transitive paketlerinden mevcut güvenlik uyarıları gelmeye devam ediyor.
+
+### Sıradaki Görev
+P6 — Booking Virtual Waiting Room
+
+---
+
 ## SON HANDOFF — 2026-05-14
 
 ### Proje

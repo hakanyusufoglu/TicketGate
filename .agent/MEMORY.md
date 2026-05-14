@@ -15,7 +15,10 @@
 - [x] TicketGate.Event — Event, Venue, Performer, tüm slicelar, migration, testler
 - [x] Testcontainers altyapısı — P4 tamamlandı
 - [x] TicketGate.TestInfrastructure projesi eklendi
-- [ ] TicketGate.Booking — P5-P7 (sıradaki)
+- [x] TicketGate.Booking — P5 tamamlandı (Ticket + ReserveTicket + Redis Lock)
+- [x] BookingIntegrationTestBase ConfigureServices dolduruldu
+- [x] Init_Tickets migration oluşturuldu
+- [ ] TicketGate.Booking — P6-P7 (sıradaki)
 - [ ] TicketGate.Payment — P8-P9
 - [ ] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
@@ -80,7 +83,7 @@
 | P3 | Event modülü | ✅ |
 | Check | Pre-production kontrol + summary audit + commit | 🔄 |
 | P4 | Testcontainers altyapısı | ✅ |
-| P5 | Booking — Ticket + ReserveTicket + Redis Lock | ⏳ |
+| P5 | Booking — Ticket + ReserveTicket + Redis Lock | ✅ |
 | P6 | Booking — Virtual Waiting Room | ⏳ |
 | P7 | Booking — TicketLockExpiredWorker | ⏳ |
 | P8 | Payment — InitiatePayment + Outbox + Idempotency | ⏳ |
