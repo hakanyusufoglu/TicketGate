@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.Identity.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.Payment.Tests", "tests\TicketGate.Payment.Tests\TicketGate.Payment.Tests.csproj", "{7AF69806-0E69-4B78-BE84-859EB0E5D18E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.TestInfrastructure", "tests\TicketGate.TestInfrastructure\TicketGate.TestInfrastructure.csproj", "{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,6 +175,18 @@ Global
 		{7AF69806-0E69-4B78-BE84-859EB0E5D18E}.Release|x64.Build.0 = Release|Any CPU
 		{7AF69806-0E69-4B78-BE84-859EB0E5D18E}.Release|x86.ActiveCfg = Release|Any CPU
 		{7AF69806-0E69-4B78-BE84-859EB0E5D18E}.Release|x86.Build.0 = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|x64.Build.0 = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Debug|x86.Build.0 = Debug|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|x64.ActiveCfg = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|x64.Build.0 = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -190,5 +204,6 @@ Global
 		{8AF05ED2-90C6-4E45-8E90-130B11D4A8B9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{A5CC440C-113C-4A8B-8EBD-293379E2BF39} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{7AF69806-0E69-4B78-BE84-859EB0E5D18E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

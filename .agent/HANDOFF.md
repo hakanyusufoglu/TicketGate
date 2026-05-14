@@ -10,27 +10,26 @@ TicketGate — bilet satış platformu
 Repo: github.com/[kullanici]/TicketGate
 
 ### Bu Session'da Yapılanlar
-- Pre-production check çalıştırıldı
-- İlk build/test temizdi: 0 hata, 0 warning; 27 test geçti
-- AGENTS.md kural taramaları yapıldı
-- Duplicate `AddOpenBehavior` ihlali düzeltildi
-- MediatR validation pipeline merkezi `ModuleExtensions` kaydına taşındı
-- Booking, Payment, Notification için `IModule` implementasyonları eklendi
-- Identity/Event runtime schema adları const üzerinden kullanılacak şekilde düzeltildi
-- Son build/test tekrar temiz geçti
-- .agent/ dosyaları güncellendi
+- P4 Testcontainers altyapısı tamamlandı
+- tests/TicketGate.TestInfrastructure projesi eklendi ve solution'a bağlandı
+- IntegrationTestBase eklendi: PostgreSQL 16, Redis 7, Respawn reset, schema hazırlığı
+- Booking.Tests ve Payment.Tests Testcontainers paketleri + ProjectReference ile ortak altyapıya bağlandı
+- BookingIntegrationTestBase ve PaymentIntegrationTestBase eklendi
+- Booking integration smoke testleri eklendi: PostgreSQL schema erişimi, Redis SET NX ve FLUSHDB reset davranışı
+- http-client.env.json baseUrl http://localhost:5001 yapıldı
 
 ### Biten Görev
-Pre-production check ve kritik AGENTS.md ihlal düzeltmeleri
+P4 — Testcontainers altyapısı
 
 ### Yarım Kalan / Dikkat
 - Event modülü commit edilmedi
-- AddOpenBehavior merkezi kayıtta; modüllerde tekrar edilmemeli
-- Magic string grep'i EF migration, route ve table adlarını da yakalıyor; runtime schema kullanımı const'a taşındı
+- AddOpenBehavior her modülde tekrar kaydediliyor — Gateway promptunda merkezi yapılacak
 - Docker PG host portu: 55432
+- Integration testleri 55432'yi kullanmaz; Testcontainers izole PostgreSQL/Redis container başlatır
+- Testcontainers 3.x transitive paketlerinde NuGet güvenlik uyarıları var
 
 ### Sıradaki Görev
-Yeni P3 (eski P4) — TicketGate.Gateway (Ocelot)
+P5 — Booking modülü: Ticket + ReserveTicket + Redis Lock
 
 ### Yeni Session Başlangıç Komutu
 ```
