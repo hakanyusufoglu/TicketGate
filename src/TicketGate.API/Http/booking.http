@@ -3,6 +3,20 @@
 @eventId = 33333333-3333-3333-3333-333333333333
 @userId = 44444444-4444-4444-4444-444444444444
 
+### Generate Tickets (happy path -> 201)
+# Once calistirilir; seed event icin 50 ticket olusturur.
+POST {{baseUrl}}/api/v1/events/{{eventId}}/tickets/generate
+Content-Type: application/json
+
+### Generate Tickets (tekrar -> 409)
+# Expected: HTTP 409 Conflict
+POST {{baseUrl}}/api/v1/events/{{eventId}}/tickets/generate
+Content-Type: application/json
+
+### GetAvailableSeats (generate sonrasi -> 200)
+# Expected: HTTP 200 OK, 50 musait koltuk
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats
+
 ### Reserve (happy path -> 201)
 # Expected: HTTP 201 Created
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
@@ -46,7 +60,3 @@ GET {{baseUrl}}/api/v1/tickets/{{ticketId}}
 ### GetTicketById (bulunamadi -> 404)
 # Expected: HTTP 404 Not Found
 GET {{baseUrl}}/api/v1/tickets/{{missingTicketId}}
-
-### GetAvailableSeats (happy path -> 200)
-# Expected: HTTP 200 OK
-GET {{baseUrl}}/api/v1/events/{{eventId}}/seats

@@ -33,3 +33,6 @@ P6 — Booking: Virtual Waiting Room
 - Her yeni sınıfa Türkçe XML summary zorunlu
 - Built-in RateLimiter (Ocelot yerine) — P17'de eklenecek
 - Testcontainers 3.x restore/build aşamasında transitive NuGet güvenlik uyarıları üretiyor; ileride paket versiyonu veya major upgrade değerlendirilmeli
+
+## Son Tamamlanan Ara Gorev
+Seat map JSON yapisi typed Core SeatMap value object'ine tasindi. Event Venue jsonb persist'i converter ile guncellendi, Booking GenerateTickets slice'i eklendi ve POST /api/v1/events/{eventId}/tickets/generate endpoint'i Event seat map reader soyutlamasi uzerinden seat map okuyacak sekilde baglandi. Rezervasyon mekanizmasina dokunulmadi.

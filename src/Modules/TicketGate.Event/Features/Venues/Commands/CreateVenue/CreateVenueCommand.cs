@@ -1,6 +1,8 @@
 using MediatR;
+using TicketGate.Core.Domain;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Event.Features.Venues.Commands.CreateVenue;
 
-public sealed record CreateVenueCommand(string Name, string Location, string SeatMap) : IRequest<Result<Guid>>;
+/// <summary>Mekan olusturma komutu. SeatMap typed value object olarak alinip jsonb kolona yazilir.</summary>
+public sealed record CreateVenueCommand(string Name, string Location, SeatMap SeatMap) : IRequest<Result<Guid>>;

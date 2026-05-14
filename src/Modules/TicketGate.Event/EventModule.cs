@@ -25,6 +25,8 @@ public sealed class EventModule : IModule
             options.UseSnakeCaseNamingConvention();
         });
 
+        services.AddScoped<IEventSeatMapReader, EventSeatMapReader>();
+
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }
 

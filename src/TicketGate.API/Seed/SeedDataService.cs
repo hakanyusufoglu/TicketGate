@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TicketGate.Core.Domain;
 using TicketGate.Event.Domain.Entities;
 using TicketGate.Event.Infrastructure.Persistence;
 using EventEntity = TicketGate.Event.Domain.Entities.Event;
@@ -8,7 +9,7 @@ namespace TicketGate.API.Seed;
 /// <summary>
 /// Development ortami seed data servisi. Uygulama baslarken test icin gerekli venue, performer ve event verilerini olusturur.
 /// Veri zaten varsa tekrar eklenmez; idempotent calisir.
-/// Ticket seed'i yoktur; ticket'lar manuel olarak olusturulur.
+/// Ticket seed'i yoktur; ticket'lar generate endpoint'i ile olusturulur.
 /// </summary>
 public static class SeedDataService
 {
@@ -29,7 +30,7 @@ public static class SeedDataService
     }
 
     /// <summary>
-    /// Volkswagen Arena venue kaydini olusturur.
+    /// Volkswagen Arena venue kaydini yeni SeatMap hiyerarsisiyle olusturur.
     /// Kayit zaten varsa tekrar eklemeden atlar.
     /// </summary>
     private static async Task SeedVenueAsync(EventDbContext db)
@@ -39,15 +40,49 @@ public static class SeedDataService
             return;
         }
 
+        var seatMap = new SeatMap
+        {
+            Sections =
+            [
+                new Section(
+                    Id: "VIP",
+                    Name: "VIP Alan",
+                    Rows:
+                    [
+                        new Row("A", [1, 2, 3, 4, 5]),
+                        new Row("B", [1, 2, 3, 4, 5])
+                    ],
+                    Price: 500m),
+                new Section(
+                    Id: "NORMAL",
+                    Name: "Normal Alan",
+                    Rows:
+                    [
+                        new Row("C", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+                        new Row("D", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+                    ],
+                    Price: 300m),
+                new Section(
+                    Id: "EKONOMI",
+                    Name: "Ekonomi Alan",
+                    Rows:
+                    [
+                        new Row("E", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+                        new Row("F", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+                    ],
+                    Price: 150m)
+            ]
+        };
+
         var venue = Venue.Create(
             "Volkswagen Arena",
-            "İstanbul, Türkiye",
-            """{"rows": 10, "columns": 10}""");
+            "Istanbul, Turkiye",
+            seatMap);
 
         db.Venues.Add(venue);
         SetEntityId(db, venue, SeedGuids.VenueId);
         await db.SaveChangesAsync();
-        Console.WriteLine("[Seed] Venue oluşturuldu: Volkswagen Arena");
+        Console.WriteLine("[Seed] Venue olusturuldu: Volkswagen Arena");
     }
 
     /// <summary>
@@ -63,12 +98,12 @@ public static class SeedDataService
 
         var performer = Performer.Create(
             "Tarkan",
-            "Türk pop müziğinin efsanevi ismi.");
+            "Turk pop muziginin efsanevi ismi.");
 
         db.Performers.Add(performer);
         SetEntityId(db, performer, SeedGuids.PerformerId);
         await db.SaveChangesAsync();
-        Console.WriteLine("[Seed] Performer oluşturuldu: Tarkan");
+        Console.WriteLine("[Seed] Performer olusturuldu: Tarkan");
     }
 
     /// <summary>
@@ -95,7 +130,7 @@ public static class SeedDataService
         db.Events.Add(eventEntity);
         SetEntityId(db, eventEntity, SeedGuids.EventId);
         await db.SaveChangesAsync();
-        Console.WriteLine("[Seed] Event oluşturuldu: Tarkan Konseri 2026 (published)");
+        Console.WriteLine("[Seed] Event olusturuldu: Tarkan Konseri 2026 (published)");
     }
 
     /// <summary>

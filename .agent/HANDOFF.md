@@ -1,3 +1,32 @@
+## SON HANDOFF � 2026-05-14 SeatMap + GenerateTickets
+
+### Proje
+TicketGate � bilet satis platformu
+.NET 10 � Moduler Monolith � Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- SeatMap Core ortak value object olarak eklendi: Section/Row/Seat hiyerarsisi, TotalCapacity ve GetPrice.
+- Venue entity string SeatMap yerine typed SeatMap kullanacak sekilde guncellendi; jsonb conversion korundu.
+- Event modulu IEventSeatMapReader implementasyonu ekledi; Booking endpoint'i Event modulu DB tiplerine direkt referans almiyor.
+- Booking GenerateTickets command/response/validator/handler slice'i eklendi.
+- POST /api/v1/events/{eventId}/tickets/generate endpoint'i eklendi.
+- GetAvailableSeats SeatDto artik SeatCode, Section, Row, SeatNumber ve Price donuyor.
+- Seed venue 50 koltuklu VIP/NORMAL/EKONOMI SeatMap formatina guncellendi.
+- Update_Venue_SeatMap migration olusturuldu ve database update calistirildi.
+- GenerateTickets handler integration testleri eklendi.
+
+### Biten Gorev
+Seat map refactor + GenerateTickets slice.
+
+### Dikkat
+- Migration schema olarak bos; kolon zaten jsonb oldugu icin degisen taraf CLR model/converter.
+- GenerateTickets tekrar cagrida mevcut ticket kontroluyle 409 donuyor. Yuksek concurrency icin ileride EventId+Seat unique constraint ve DbUpdateException mapping eklemek daha saglam olur.
+- Core'a SeatMap eklemek AGENTS'taki "Core'a domain kodu ekleme" kuralina normalde ters; bu session'da kullanici kesin kural olarak SeatMap'in Core'a tasinmasini istedi.
+
+### Siradaki Gorev
+P6 � Booking Virtual Waiting Room
+
+---
 # HANDOFF.md — Session Geçiş Şablonu
 
 ---
@@ -126,3 +155,4 @@ Aşağıdaki dosyaları sırayla oku, özetle, devam et:
 - Claude Code: CLAUDE.md → .agent/ dosyalarına referans ver
 - Cursor: .cursorrules → aynı yönlendirme
 - Web arayüzleri: HANDOFF.md içeriğini ilk mesaj olarak yapıştır
+

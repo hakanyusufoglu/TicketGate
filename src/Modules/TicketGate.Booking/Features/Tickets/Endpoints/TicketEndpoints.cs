@@ -4,10 +4,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using TicketGate.Booking.Features.Tickets.Commands.CancelTicket;
 using TicketGate.Booking.Features.Tickets.Commands.ConfirmTicket;
+using TicketGate.Booking.Features.Tickets.Commands.GenerateTickets;
 using TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 using TicketGate.Booking.Features.Tickets.Queries.GetAvailableSeats;
 using TicketGate.Booking.Features.Tickets.Queries.GetTicketById;
+using TicketGate.Core.Contracts;
 using TicketGate.Core.Extensions;
+using TicketGate.Core.Results;
 
 namespace TicketGate.Booking.Features.Tickets.Endpoints;
 
@@ -71,6 +74,22 @@ public static class TicketEndpoints
         {
             var result = await sender.Send(new GetAvailableSeatsQuery(id), cancellationToken);
             return result.ToHttpResult();
+        });
+
+        group.MapPost("/events/{id:guid}/tickets/generate", async (
+            Guid id,
+            IEventSeatMapReader seatMapReader,
+            ISender sender,
+            CancellationToken cancellationToken) =>
+        {
+            var seatMapResult = await seatMapReader.GetSeatMapByEventIdAsync(id, cancellationToken);
+            if (seatMapResult.IsFailure)
+            {
+                return Result<GenerateTicketsResponse>.Fail(seatMapResult.Error!).ToHttpResult(StatusCodes.Status201Created);
+            }
+
+            var result = await sender.Send(new GenerateTicketsCommand(id, seatMapResult.Value!), cancellationToken);
+            return result.ToHttpResult(StatusCodes.Status201Created);
         });
 
         return app;

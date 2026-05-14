@@ -21,13 +21,42 @@ internal sealed class GetAvailableSeatsHandler(BookingDbContext db)
         GetAvailableSeatsQuery request,
         CancellationToken cancellationToken)
     {
-        var seats = await db.Tickets
+        var tickets = await db.Tickets
             .AsNoTracking()
             .Where(ticket => ticket.EventId == request.EventId && ticket.Status == TicketStatus.Available)
             .OrderBy(ticket => ticket.Seat)
-            .Select(ticket => new SeatDto(ticket.Id, ticket.Seat, ticket.Price))
+            .Select(ticket => new
+            {
+                ticket.Id,
+                ticket.Seat,
+                ticket.Price
+            })
             .ToListAsync(cancellationToken);
 
+        var seats = tickets
+            .Select(ticket => ToSeatDto(ticket.Id, ticket.Seat, ticket.Price))
+            .ToList();
+
         return Result<List<SeatDto>>.Ok(seats);
+    }
+
+    /// <summary>
+    /// SeatCode bilgisini Section, Row ve SeatNumber alanlarina ayirir.
+    /// Eski A-1 formatli seed/test biletleri icin section bos birakilarak geriye uyumluluk korunur.
+    /// </summary>
+    private static SeatDto ToSeatDto(Guid ticketId, string seatCode, decimal price)
+    {
+        var parts = seatCode.Split('-', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 3 && int.TryParse(parts[2], out var sectionSeatNumber))
+        {
+            return new SeatDto(ticketId, seatCode, parts[0], parts[1], sectionSeatNumber, price);
+        }
+
+        if (parts.Length == 2 && int.TryParse(parts[1], out var rowSeatNumber))
+        {
+            return new SeatDto(ticketId, seatCode, string.Empty, parts[0], rowSeatNumber, price);
+        }
+
+        return new SeatDto(ticketId, seatCode, string.Empty, string.Empty, 0, price);
     }
 }

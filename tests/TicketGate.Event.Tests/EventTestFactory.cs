@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TicketGate.Core.Domain;
 using TicketGate.Event.Domain.Entities;
 using TicketGate.Event.Infrastructure.Persistence;
 
@@ -21,7 +22,7 @@ internal static class EventTestFactory
         string location = "Istanbul",
         CancellationToken cancellationToken = default)
     {
-        var venue = Venue.Create(name, location, """{"sections":[]}""");
+        var venue = Venue.Create(name, location, CreateSeatMap());
 
         await db.Venues.AddAsync(venue, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
@@ -40,5 +41,20 @@ internal static class EventTestFactory
         await db.SaveChangesAsync(cancellationToken);
 
         return performer;
+    }
+
+    private static SeatMap CreateSeatMap()
+    {
+        return new SeatMap
+        {
+            Sections =
+            [
+                new Section(
+                    Id: "TEST",
+                    Name: "Test Section",
+                    Rows: [new Row("A", [1])],
+                    Price: 100m)
+            ]
+        };
     }
 }

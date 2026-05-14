@@ -114,3 +114,16 @@
 - BCrypt.Net · JWT Bearer
 - Testcontainers · xUnit · FluentAssertions
 - Docker Compose · Linux
+
+## 2026-05-14 Ara Gorev Notu
+
+- [x] SeatMap value object Core'a tasindi
+- [x] Venue entity typed SeatMap formatina guncellendi
+- [x] GenerateTickets slice eklendi
+- [x] SeatDto section/row/seat bilgisiyle guncellendi
+- [x] Update_Venue_SeatMap migration olusturuldu ve database update calistirildi
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-14 | SeatMap Core contract | Event ve Booking tarafinda ortak seat map modeli gerekiyor; moduller arasi direkt referans yerine Core contract kullanildi |
+| 2026-05-14 | IEventSeatMapReader | Booking endpoint'i EventDbContext'e direkt baglanmasin diye Event modulu seat map okuma soyutlamasi sagliyor |
