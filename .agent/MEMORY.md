@@ -18,6 +18,10 @@
 - [x] TicketGate.Booking — P5 tamamlandı (Ticket + ReserveTicket + Redis Lock)
 - [x] BookingIntegrationTestBase ConfigureServices dolduruldu
 - [x] Init_Tickets migration oluşturuldu
+- [x] Seed data tamamlandı (Venue + Performer + Event)
+- [x] SeedGuids oluşturuldu
+- [x] http-client.env.json güncellendi
+- [x] event.http sabit Guid'lere geçirildi
 - [ ] TicketGate.Booking — P6-P7 (sıradaki)
 - [ ] TicketGate.Payment — P8-P9
 - [ ] TicketGate.Notification — P10
@@ -90,7 +94,7 @@
 | P9 | Payment — OutboxWorker + dead letter | ⏳ |
 | P10 | Notification — SSE + Redis fan-out | ⏳ |
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ⏳ |
-| P12 | Seed data + Migration stratejisi | ⏳ |
+| P12 | Seed data + Migration stratejisi | 🔄 |
 | P13 | Prometheus + Grafana | ⏳ |
 | P14 | Docker Compose production (Health Checks dahil) | ⏳ |
 | P15 | CI/CD — GitHub Actions | ⏳ |

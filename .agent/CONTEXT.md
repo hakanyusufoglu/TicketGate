@@ -8,6 +8,8 @@ P6 — Booking Virtual Waiting Room
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandı. Booking modülünde
 Ticket entity, xmin concurrency, Redis SETNX lock, Reserve/Confirm/Cancel
 sliceları, query endpointleri, Init_Tickets migration ve integration testleri hazır.
+Development seed data eklendi: Event modülü için sabit Guid'li Venue, Performer
+ve published Event kaydı idempotent olarak oluşturuluyor; ticket seed yok.
 
 ## P4 Son Durum
 - [x] tests/TicketGate.TestInfrastructure projesi eklendi

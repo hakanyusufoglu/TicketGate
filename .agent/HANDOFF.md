@@ -2,6 +2,33 @@
 
 ---
 
+## SON HANDOFF — 2026-05-14 Seed
+
+### Proje
+TicketGate — bilet satış platformu
+.NET 10 · Modüler Monolith · Vertical Slice Architecture
+
+### Bu Session'da Yapılanlar
+- Development ortamı için Event modülü seed data eklendi
+- SeedGuids ile sabit Venue, Performer ve Event Guid'leri tanımlandı
+- SeedDataService idempotent şekilde Venue, Performer ve published Event oluşturacak şekilde eklendi
+- Program.cs Development ortamında seed çağıracak şekilde güncellendi
+- http-client.env.json sabit seed değişkenleriyle güncellendi
+- event.http response chaining kullanmayacak şekilde sabit Guid değişkenlerine geçirildi
+
+### Biten Görev
+Development seed data — Venue + Performer + Event
+
+### Dikkat
+- Ticket seed eklenmedi; ticket'lar manuel oluşturulacak.
+- Event entity factory sabit Guid overload'u sunmadığı için seed servisinde EF Core change tracker üzerinden Id sabitleniyor.
+- API run doğrulamasında seed kayıtları zaten bulunduğunda oluşturuldu logları görünmez; bu idempotent davranıştır.
+
+### Sıradaki Görev
+P6 — Booking Virtual Waiting Room
+
+---
+
 ## SON HANDOFF — 2026-05-14 P5
 
 ### Proje
