@@ -3,10 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
+using TicketGate.Identity.Configuration;
 using TicketGate.Identity.Domain.Entities;
 using TicketGate.Identity.Features.Auth.Commands.LoginUser;
 using TicketGate.Identity.Infrastructure.Persistence;
@@ -14,7 +15,7 @@ using RefreshTokenEntity = TicketGate.Identity.Domain.Entities.RefreshToken;
 
 namespace TicketGate.Identity.Features.Auth.Commands.RefreshToken;
 
-public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration config)
+public sealed class RefreshTokenHandler(IdentityDbContext db, IOptions<JwtSettings> jwtOptions)
     : IRequestHandler<RefreshTokenCommand, Result<LoginUserResponse>>
 {
     public async Task<Result<LoginUserResponse>> Handle(
@@ -30,7 +31,7 @@ public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration con
             return Result<LoginUserResponse>.Fail(AppError.Unauthorized("Invalid or expired token."));
         }
 
-        var tokenResult = CreateAccessToken(refreshToken.User, config);
+        var tokenResult = CreateAccessToken(refreshToken.User, jwtOptions.Value);
 
         if (tokenResult.IsFailure)
         {
@@ -43,7 +44,7 @@ public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration con
         var newRefreshToken = RefreshTokenEntity.Create(
             refreshToken.UserId,
             newRefreshTokenValue,
-            DateTime.UtcNow.AddDays(7));
+            DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays));
 
         await db.RefreshTokens.AddAsync(newRefreshToken, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
@@ -54,16 +55,12 @@ public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration con
             tokenResult.Value.ExpiresAt));
     }
 
-    private static Result<AccessTokenResult> CreateAccessToken(User user, IConfiguration config)
+    private static Result<AccessTokenResult> CreateAccessToken(User user, JwtSettings jwtSettings)
     {
-        var issuer = config["Jwt:Issuer"];
-        var audience = config["Jwt:Audience"];
-        var secretKey = config["Jwt:SecretKey"];
-
-        if (string.IsNullOrWhiteSpace(issuer) ||
-            string.IsNullOrWhiteSpace(audience) ||
-            string.IsNullOrWhiteSpace(secretKey) ||
-            Encoding.UTF8.GetByteCount(secretKey) < 32)
+        if (string.IsNullOrWhiteSpace(jwtSettings.Issuer) ||
+            string.IsNullOrWhiteSpace(jwtSettings.Audience) ||
+            string.IsNullOrWhiteSpace(jwtSettings.SecretKey) ||
+            Encoding.UTF8.GetByteCount(jwtSettings.SecretKey) < 32)
         {
             return Result<AccessTokenResult>.Fail(new AppError(
                 AppErrorType.Internal,
@@ -71,7 +68,7 @@ public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration con
                 "JWT configuration is invalid."));
         }
 
-        var expiresAt = DateTime.UtcNow.AddMinutes(15);
+        var expiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes);
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -80,11 +77,11 @@ public sealed class RefreshTokenHandler(IdentityDbContext db, IConfiguration con
         };
 
         var credentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
             SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: jwtSettings.Issuer,
+            audience: jwtSettings.Audience,
             claims: claims,
             expires: expiresAt,
             signingCredentials: credentials);

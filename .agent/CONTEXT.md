@@ -36,3 +36,6 @@ P6 — Booking: Virtual Waiting Room
 
 ## Son Tamamlanan Ara Gorev
 Seat map JSON yapisi typed Core SeatMap value object'ine tasindi. Event Venue jsonb persist'i converter ile guncellendi, Booking GenerateTickets slice'i eklendi ve POST /api/v1/events/{eventId}/tickets/generate endpoint'i Event seat map reader soyutlamasi uzerinden seat map okuyacak sekilde baglandi. Rezervasyon mekanizmasina dokunulmadi.
+
+## Son Tamamlanan Ara Gorev
+Magic number konfigurasyon refactor'u baslatildi. Booking Redis lock TTL, Jwt token sureleri, Outbox polling/batch/retry ve SSE heartbeat degerleri strongly-typed options ve appsettings uzerinden yonetilecek sekilde guncellendi. appsettings degerleri numeric tutuldu; kod tarafinda TimeSpan donusumu options degerlerinden yapiliyor.

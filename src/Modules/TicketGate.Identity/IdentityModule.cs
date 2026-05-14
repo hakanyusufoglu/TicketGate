@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using TicketGate.Core.Contracts;
+using TicketGate.Identity.Configuration;
 using TicketGate.Identity.Features.Auth.Endpoints;
 using TicketGate.Identity.Infrastructure;
 using TicketGate.Identity.Infrastructure.Persistence;
@@ -31,23 +32,24 @@ public sealed class IdentityModule : IModule
             options.UseSnakeCaseNamingConvention();
         });
 
+        services.Configure<JwtSettings>(config.GetSection(JwtSettings.SectionName));
+
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                var jwtSection = config.GetSection("Jwt");
-                var secretKey = jwtSection["SecretKey"] ?? string.Empty;
+                var jwtSettings = config.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = jwtSection["Issuer"],
+                    ValidIssuer = jwtSettings.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = jwtSection["Audience"],
+                    ValidAudience = jwtSettings.Audience,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(2)
+                    ClockSkew = TimeSpan.FromMinutes(jwtSettings.ClockSkewMinutes)
                 };
             });
 

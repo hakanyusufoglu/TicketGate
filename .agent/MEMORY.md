@@ -127,3 +127,10 @@
 |-------|-------|---------|
 | 2026-05-14 | SeatMap Core contract | Event ve Booking tarafinda ortak seat map modeli gerekiyor; moduller arasi direkt referans yerine Core contract kullanildi |
 | 2026-05-14 | IEventSeatMapReader | Booking endpoint'i EventDbContext'e direkt baglanmasin diye Event modulu seat map okuma soyutlamasi sagliyor |
+
+## 2026-05-14 Configuration Refactor Notu
+
+- [x] BookingSettings strongly-typed options eklendi; Redis lock TTL appsettings BookingSettings:LockTtlSeconds uzerinden okunuyor.
+- [x] JwtSettings eklendi; access token, refresh token ve clock skew sureleri config'e tasindi.
+- [x] OutboxSettings ve SseSettings options siniflari eklendi; ileride worker/heartbeat magic number kullanmadan baglanacak.
+- [x] appsettings.json ve appsettings.Development.json BookingSettings, OutboxSettings ve SseSettings ile guncellendi.

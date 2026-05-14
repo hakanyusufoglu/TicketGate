@@ -14,7 +14,7 @@ public sealed class LoginUserHandlerTests
     {
         await using var db = IdentityTestFactory.CreateDbContext();
         await SeedUserAsync(db, "login@ticketgate.test", "P@ssword123", CancellationToken.None);
-        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtOptions());
         var command = new LoginUserCommand("login@ticketgate.test", "P@ssword123");
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -35,7 +35,7 @@ public sealed class LoginUserHandlerTests
     {
         await using var db = IdentityTestFactory.CreateDbContext();
         await SeedUserAsync(db, "wrong-password@ticketgate.test", "P@ssword123", CancellationToken.None);
-        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtOptions());
         var command = new LoginUserCommand("wrong-password@ticketgate.test", "wrong-password");
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -51,7 +51,7 @@ public sealed class LoginUserHandlerTests
     public async Task Handle_UserNotFound_ReturnsUnauthorized()
     {
         await using var db = IdentityTestFactory.CreateDbContext();
-        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new LoginUserHandler(db, IdentityTestFactory.CreateJwtOptions());
         var command = new LoginUserCommand("missing@ticketgate.test", "P@ssword123");
 
         var result = await handler.Handle(command, CancellationToken.None);

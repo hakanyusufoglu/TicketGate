@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using TicketGate.Identity.Configuration;
 using TicketGate.Identity.Infrastructure.Persistence;
 
 namespace TicketGate.Identity.Tests;
@@ -15,15 +16,13 @@ internal static class IdentityTestFactory
         return new IdentityDbContext(options);
     }
 
-    public static IConfiguration CreateJwtConfiguration()
+    public static IOptions<JwtSettings> CreateJwtOptions()
     {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Issuer"] = "TicketGate.Tests",
-                ["Jwt:Audience"] = "TicketGate.Tests.Clients",
-                ["Jwt:SecretKey"] = "TicketGateTestsSecretKeyWithAtLeastThirtyTwoCharacters"
-            })
-            .Build();
+        return Options.Create(new JwtSettings
+        {
+            Issuer = "TicketGate.Tests",
+            Audience = "TicketGate.Tests.Clients",
+            SecretKey = "TicketGateTestsSecretKeyWithAtLeastThirtyTwoCharacters"
+        });
     }
 }

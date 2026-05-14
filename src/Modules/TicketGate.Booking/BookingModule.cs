@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
+using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Features.Tickets.Endpoints;
 using TicketGate.Booking.Infrastructure;
 using TicketGate.Booking.Infrastructure.Persistence;
@@ -38,6 +39,8 @@ public sealed class BookingModule : IModule
         var redisConnectionString = config.GetConnectionString("Redis");
         services.TryAddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(redisConnectionString ?? "localhost:6379"));
+
+        services.Configure<BookingSettings>(config.GetSection(BookingSettings.SectionName));
 
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }

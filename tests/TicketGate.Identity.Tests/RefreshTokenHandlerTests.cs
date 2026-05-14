@@ -19,7 +19,7 @@ public sealed class RefreshTokenHandlerTests
             DateTime.UtcNow.AddDays(7),
             revoke: false,
             CancellationToken.None);
-        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtOptions());
 
         var result = await handler.Handle(new RefreshTokenCommand("active-token"), CancellationToken.None);
 
@@ -46,7 +46,7 @@ public sealed class RefreshTokenHandlerTests
             DateTime.UtcNow.AddDays(-1),
             revoke: false,
             CancellationToken.None);
-        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtOptions());
 
         var result = await handler.Handle(new RefreshTokenCommand("expired-token"), CancellationToken.None);
 
@@ -67,7 +67,7 @@ public sealed class RefreshTokenHandlerTests
             DateTime.UtcNow.AddDays(7),
             revoke: true,
             CancellationToken.None);
-        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtConfiguration());
+        var handler = new RefreshTokenHandler(db, IdentityTestFactory.CreateJwtOptions());
 
         var result = await handler.Handle(new RefreshTokenCommand("revoked-token"), CancellationToken.None);
 

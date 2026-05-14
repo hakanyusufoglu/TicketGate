@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Booking.Domain.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
@@ -10,20 +12,19 @@ using TicketGate.Core.Results;
 namespace TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 
 /// <summary>
-/// Bilet rezervasyon komutunu isler. Redis SETNX ile atomik kilit alir ve TTL=600s uygular.
+/// Bilet rezervasyon komutunu isler. Redis SETNX ile atomik kilit alir ve TTL'i BookingSettings uzerinden uygular.
 /// Ayni bilete es zamanli istek gelirse 409 doner. Kilit alindiktan sonra PostgreSQL'e yazar; hata olursa kilidi geri birakir.
 /// xmin token ile optimistic concurrency cakismasi da yakalanir.
 /// </summary>
 internal sealed class ReserveTicketHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
-    IPublisher publisher) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
+    IPublisher publisher,
+    IOptions<BookingSettings> settings) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
 {
-    private static readonly TimeSpan LockTtl = TimeSpan.FromMinutes(10);
-
     /// <summary>
     /// Rezervasyon akisini Redis lock, PostgreSQL state kontrolu, domain state gecisi ve event publish adimlariyla yurutur.
-    /// Redis SETNX race condition'i engeller; xmin ise ayni satirdaki gec yazma cakismalarini 409'a cevirir.
+    /// Redis SETNX race condition'i engeller; TTL suresi appsettings BookingSettings:LockTtlSeconds degerinden okunur.
     /// </summary>
     public async Task<Result<ReserveTicketResponse>> Handle(
         ReserveTicketCommand request,
@@ -32,7 +33,8 @@ internal sealed class ReserveTicketHandler(
         var redisDb = redis.GetDatabase();
         var lockKey = ToLockKey(request.TicketId);
         var lockValue = request.UserId.ToString();
-        var lockTaken = await redisDb.StringSetAsync(lockKey, lockValue, LockTtl, When.NotExists);
+        var lockTtl = TimeSpan.FromSeconds(settings.Value.LockTtlSeconds);
+        var lockTaken = await redisDb.StringSetAsync(lockKey, lockValue, lockTtl, When.NotExists);
 
         if (!lockTaken)
         {
@@ -62,7 +64,7 @@ internal sealed class ReserveTicketHandler(
             ticket.Reserve(request.UserId);
             await db.SaveChangesAsync(cancellationToken);
 
-            var expiresAt = DateTime.UtcNow.Add(LockTtl);
+            var expiresAt = DateTime.UtcNow.Add(lockTtl);
             await publisher.Publish(
                 new TicketReserved(ticket.Id, ticket.EventId, ticket.Seat, ticket.Price, request.UserId, expiresAt),
                 cancellationToken);

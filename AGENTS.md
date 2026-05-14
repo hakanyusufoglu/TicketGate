@@ -318,3 +318,84 @@ summary'de açıkça belirtilmeli.
 - Çok uzun summary (5+ satır) ❌
 - "Bu metod X'i çağırır" gibi implementation detayı ❌
 - İngilizce summary ❌
+
+---
+
+## Yapılandırma kuralları (DEĞİŞTİRİLEMEZ)
+
+Kod içinde magic number YASAK. Tüm statik değerler appsettings.json'da
+strongly-typed options sınıfı üzerinden okunur.
+
+### appsettings.json yapısı
+
+```json
+{
+  "BookingSettings": {
+    "LockTtlSeconds": 600,
+    "MaxCheckoutCapacity": 10,
+    "QueueDispatcherIntervalSeconds": 5,
+    "QueueDispatchBatchSize": 10
+  },
+  "OutboxSettings": {
+    "PollingIntervalSeconds": 5,
+    "BatchSize": 10,
+    "MaxRetryCount": 3
+  },
+  "SseSettings": {
+    "HeartbeatIntervalSeconds": 15
+  }
+}
+```
+
+### Strongly-typed options pattern
+
+```csharp
+/// <summary>
+/// Booking modülü yapılandırma ayarları.
+/// Redis lock süresi, checkout kapasitesi ve queue dispatcher
+/// parametreleri buradan okunur. Magic number içermez.
+/// </summary>
+public sealed class BookingSettings
+{
+    public const string SectionName = "BookingSettings";
+    public int LockTtlSeconds { get; init; } = 600;
+    public int MaxCheckoutCapacity { get; init; } = 10;
+    public int QueueDispatcherIntervalSeconds { get; init; } = 5;
+    public int QueueDispatchBatchSize { get; init; } = 10;
+}
+
+// IModule.RegisterServices içinde:
+services.Configure<BookingSettings>(
+    config.GetSection(BookingSettings.SectionName));
+
+// Handler/Worker içinde:
+internal sealed class ReserveTicketHandler(
+    IOptions<BookingSettings> settings, ...)
+{
+    private readonly BookingSettings _settings = settings.Value;
+
+    // _settings.LockTtlSeconds kullan — 600 yazma
+}
+```
+
+### Hangi değerler appsettings'e alınır?
+
+| Değer | Sınıf | Key |
+|-------|-------|-----|
+| Redis lock TTL | BookingSettings | LockTtlSeconds |
+| Max checkout kapasitesi | BookingSettings | MaxCheckoutCapacity |
+| Queue dispatcher aralığı | BookingSettings | QueueDispatcherIntervalSeconds |
+| Queue batch boyutu | BookingSettings | QueueDispatchBatchSize |
+| Outbox polling aralığı | OutboxSettings | PollingIntervalSeconds |
+| Outbox batch boyutu | OutboxSettings | BatchSize |
+| Outbox max retry | OutboxSettings | MaxRetryCount |
+| SSE heartbeat aralığı | SseSettings | HeartbeatIntervalSeconds |
+
+### Yasak
+
+```
+❌ private const int LockTtlSeconds = 600;
+❌ TimeSpan.FromSeconds(600)
+❌ await Task.Delay(5000)
+❌ if (retryCount >= 3)
+```

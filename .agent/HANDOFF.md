@@ -1,3 +1,26 @@
+## SON HANDOFF � 2026-05-14 Configuration Refactor
+
+### Proje
+TicketGate � bilet satis platformu
+.NET 10 � Moduler Monolith � Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- AGENTS.md'deki yeni yapilandirma kurali okundu: runtime magic number degerleri appsettings + strongly-typed options uzerinden yonetilecek.
+- BookingSettings eklendi; ReserveTicketHandler Redis lock TTL'i BookingSettings:LockTtlSeconds degerinden okuyor.
+- JwtSettings eklendi; access token suresi, refresh token suresi ve clock skew config'e tasindi.
+- OutboxSettings ve SseSettings options siniflari eklendi; Payment ve Notification modulleri ilgili options kayitlarini yapiyor.
+- appsettings.json ve appsettings.Development.json BookingSettings, OutboxSettings, SseSettings ve Jwt sure alanlariyla guncellendi.
+- ReserveTicketHandler XML summary sabit TTL ifadesi yerine BookingSettings kaynakli TTL'i anlatacak sekilde duzeltildi.
+
+### Dikkat
+- appsettings degerleri TimeSpan string formatinda degil; numeric seconds/minutes/days olarak kaldi.
+- Kod tarafinda TimeSpan.FromSeconds/FromMinutes appsettings options degerleriyle kullaniliyor; sabit 10/15/2 verilmedi.
+- Test verisi, seed koltuk numaralari, package versionlari ve migration metadata magic number kapsaminda degil.
+
+### Siradaki Gorev
+P6 � Booking Virtual Waiting Room
+
+---
 ## SON HANDOFF � 2026-05-14 SeatMap + GenerateTickets
 
 ### Proje
@@ -155,4 +178,5 @@ Aşağıdaki dosyaları sırayla oku, özetle, devam et:
 - Claude Code: CLAUDE.md → .agent/ dosyalarına referans ver
 - Cursor: .cursorrules → aynı yönlendirme
 - Web arayüzleri: HANDOFF.md içeriğini ilk mesaj olarak yapıştır
+
 

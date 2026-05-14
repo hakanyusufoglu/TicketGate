@@ -2,7 +2,9 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.TestInfrastructure;
 
@@ -28,6 +30,8 @@ public abstract class BookingIntegrationTestBase : IntegrationTestBase
 
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(RedisConnectionString));
+
+        services.AddSingleton(Options.Create(new BookingSettings()));
 
         services.AddLogging();
 
