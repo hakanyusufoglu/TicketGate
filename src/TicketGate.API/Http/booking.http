@@ -26,12 +26,8 @@ Authorization: Bearer {{accessToken}}
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
 Authorization: Bearer {{accessToken}}
 
-### Confirm (happy path -> 204)
-# Expected: HTTP 204 No Content
-POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/confirm
-Authorization: Bearer {{accessToken}}
-
-### Cancel (happy path -> 204)
+### Cancel (confirmed ticket -> 204)
+# Ticket artik odeme tamamlandiktan sonra PaymentCompletedHandler ile Confirmed olur.
 # Expected: HTTP 204 No Content
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/cancel
 Authorization: Bearer {{accessToken}}

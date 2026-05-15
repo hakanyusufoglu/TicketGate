@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TicketGate.Booking.Features.Tickets.Commands.CancelTicket;
-using TicketGate.Booking.Features.Tickets.Commands.ConfirmTicket;
 using TicketGate.Booking.Features.Tickets.Commands.GenerateTickets;
 using TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 using TicketGate.Booking.Features.Tickets.Queries.GetAvailableSeats;
@@ -48,30 +47,6 @@ public static class TicketEndpoints
                 Ayni bilete es zamanli istek gelirse 409 doner.
                 """)
             .Produces<ReserveTicketResponse>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
-
-        group.MapPost("/tickets/{id:guid}/confirm", async (
-            Guid id,
-            ISender sender,
-            HttpContext context,
-            CancellationToken cancellationToken) =>
-        {
-            var userId = context.GetUserId();
-            var result = await sender.Send(new ConfirmTicketCommand(id, userId), cancellationToken);
-            return result.ToHttpResult(StatusCodes.Status204NoContent);
-        })
-            .WithName("ConfirmTicket")
-            .WithSummary("Bileti onaylar")
-            .WithDescription("""
-                Odeme tamamlandiktan sonra bileti onaylar.
-                Reserved durumundan Confirmed durumuna gecis yapilir.
-                UserId JWT token'dan okunur; body'den alinmaz.
-                """)
-            .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
