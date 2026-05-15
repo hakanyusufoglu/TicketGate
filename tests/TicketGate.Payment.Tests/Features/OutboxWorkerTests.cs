@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using TicketGate.Payment.Configuration;
 using TicketGate.Payment.Domain.Enums;
 using TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
+using TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 using TicketGate.Payment.Infrastructure.Outbox;
 using TicketGate.Payment.Infrastructure.Persistence;
 using TicketGate.Payment.Infrastructure.Workers;
@@ -96,6 +97,30 @@ public sealed class OutboxWorkerTests : PaymentIntegrationTestBase
     }
 
     /// <summary>
+    /// Refund outbox mesaji islenince Payment'in Refunded'a gectigini ve mesajin processed oldugunu dogrular.
+    /// PaymentRefunded event'i ayni akis icinde publish edilir; Booking state gecisi kendi handler'inda test edilir.
+    /// </summary>
+    [Fact]
+    public async Task Worker_ProcessesRefundMessage_RefundsPayment()
+    {
+        await ResetAsync();
+        var paymentId = await CreateCompletedPaymentWithRefundOutboxAsync("refund-key-1");
+        var worker = CreateWorker();
+
+        await worker.ProcessPendingMessagesAsync(CancellationToken.None);
+
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+        var payment = await db.Payments.SingleAsync(payment => payment.Id == paymentId);
+        var outbox = await db.OutboxMessages.SingleAsync();
+
+        payment.Status.Should().Be(PaymentStatus.Refunded);
+        outbox.Type.Should().Be(OutboxMessageTypes.PaymentRefundRequested);
+        outbox.ProcessedAt.Should().NotBeNull();
+        outbox.RetryCount.Should().Be(0);
+    }
+
+    /// <summary>
     /// Pending payment ve PaymentInitiated outbox mesajini ayni test veritabanina yazar.
     /// RetryCount senaryosu gerekiyorsa MarkFailed ile mevcut retry sayisi hazirlanir.
     /// </summary>
@@ -118,6 +143,30 @@ public sealed class OutboxWorkerTests : PaymentIntegrationTestBase
         {
             outbox.MarkFailed("previous failure");
         }
+
+        await db.Payments.AddAsync(payment);
+        await db.OutboxMessages.AddAsync(outbox);
+        await db.SaveChangesAsync();
+        return payment.Id;
+    }
+
+    /// <summary>
+    /// Completed payment ve refund outbox mesajini ayni test veritabanina yazar.
+    /// Refund akisi pending charge'tan ayri olarak gateway refund sonucuna gore tamamlanir.
+    /// </summary>
+    private async Task<Guid> CreateCompletedPaymentWithRefundOutboxAsync(string idempotencyKey)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+        var payment = PaymentEntity.Create(Guid.NewGuid(), Guid.NewGuid(), 500m, idempotencyKey);
+        payment.Complete($"external-{payment.Id}");
+        var outbox = OutboxMessage.Create(
+            OutboxMessageTypes.PaymentRefundRequested,
+            new RefundPaymentOutboxPayload(
+                payment.Id,
+                payment.TicketId,
+                payment.UserId,
+                payment.ExternalPaymentId!));
 
         await db.Payments.AddAsync(payment);
         await db.OutboxMessages.AddAsync(outbox);

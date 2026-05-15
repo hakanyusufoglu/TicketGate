@@ -105,8 +105,27 @@ public sealed class Ticket
     }
 
     /// <summary>
-    /// Iade talebiyle bileti iptal eder. Confirmed durumundan Cancelled durumuna gecer.
-    /// Iade sureci Payment modulu tarafindan domain event uzerinden ayrica islenir.
+    /// Iade sonrasi bileti tekrar satisa acar. Confirmed durumundan Available durumuna gecer.
+    /// PaymentRefunded event'i gelince Booking handler'i tarafindan cagrilir.
+    /// Release() metodundan farki Reserved degil Confirmed durumundan gelmesidir.
+    /// </summary>
+    public void ReleaseAfterRefund()
+    {
+        if (Status != TicketStatus.Confirmed)
+        {
+            return;
+        }
+
+        Status = TicketStatus.Available;
+        BookedByUserId = null;
+        LockedByUserId = null;
+        LockedAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Organizator veya admin iptalinde bileti iptal eder. Confirmed durumundan Cancelled durumuna gecer.
+    /// Bu akis iade degildir; bilet tekrar satisa acilmaz ve odeme iadesi ayri yurutulur.
     /// </summary>
     public void Cancel()
     {

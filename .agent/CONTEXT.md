@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif GÃ¶rev
-P8 Refactor + P9 OutboxWorker (devam)
+P8 Refactor + P9 OutboxWorker tamamlandi. Siradaki aktif gorev P10 Notification: SSE + Redis Pub/Sub fan-out.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -55,5 +55,8 @@ Payment P9 tamamlandi. InitiatePayment artik UserId ve Amount'u request body'den
 
 ## Son Tamamlanan Ara Gorev
 Endpoint security refactor tamamlandi. Booking reserve/confirm/cancel, WaitingRoom join/position/leave ve Payment refund endpointleri UserId'yi body/query yerine JWT claim'den HttpContext.GetUserId() ile okuyor. ClaimExtensions Core'a eklendi; endpoint Swagger metadata eksikleri WithSummary, WithDescription ve Produces ile tamamlandi. Command ve handler sozlesmelerine dokunulmadi.
+
+## Son Tamamlanan Ara Gorev
+Iade akisi tamamlandi. Payment RefundPayment handler Completed payment icin refund outbox mesaji yaziyor, OutboxWorker refund gateway sonucunda Payment'i Refunded yapip PaymentRefunded event'i yayinliyor. Booking PaymentRefundedHandler bu event'i dinleyerek Confirmed ticket'i ReleaseAfterRefund() ile Available durumuna cekiyor ve TicketReleased event'i yayinliyor. CancelTicket organizator/admin iptali olarak Confirmed -> Cancelled kalir; Refund kullanici iade talebi olarak Confirmed -> Available yapar ve bilet tekrar satisa acilir.
 
 

@@ -26,6 +26,10 @@
 - [x] TicketGate.Booking — P7 TicketLockExpiredWorker tamamlandi
 - [x] TicketGate.Payment — P8 InitiatePayment + Outbox + Idempotency
 - [x] TicketGate.Payment — P9 OutboxWorker
+- [x] Iade akisi tamamlandi
+- [x] PaymentRefundedHandler Booking'e eklendi
+- [x] Ticket Confirmed -> Available donusumu calisiyor
+- [x] CancelTicket vs Refund ayrimi netlesti
 - [ ] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
 - [ ] Production promptları — P12-P19
@@ -206,3 +210,18 @@
 |-------|-------|---------|
 | 2026-05-15 | UserId endpoint katmaninda JWT claim'den okunuyor | Client body/query ile baska kullanici adina islem yapamamali; command ve handler sozlesmeleri korunarak guvenlik siniri endpoint'te kapatildi |
 | 2026-05-15 | ClaimExtensions Core'da tutuluyor | Moduller arasinda tekrar eden claim okuma kodu yerine shared kernel extension'i kullanildi |
+
+## 2026-05-15 Refund Flow Notu
+
+- [x] Iade akisi tamamlandi
+- [x] Ticket.ReleaseAfterRefund() eklendi; Confirmed -> Available gecisini kapsuller
+- [x] PaymentRefundedHandler Booking'e eklendi; PaymentRefunded event'i gelince ticket tekrar satisa aciliyor
+- [x] Ticket Confirmed -> Available donusumu integration test ile dogrulandi
+- [x] RefundPayment wrong user senaryosu 401 Unauthorized'a hizalandi
+- [x] OutboxWorker refund mesaji icin Payment Refunded ve PaymentRefunded event akisina test eklendi
+- [x] CancelTicket vs Refund ayrimi netlesti: CancelTicket Confirmed -> Cancelled ve bilet satisa donmez; Refund Confirmed -> Available ve bilet tekrar satisa acilir
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-15 | Refund icin ayri ReleaseAfterRefund metodu | Release() TTL/payment failure icin Reserved -> Available akisini temsil ediyor; refund Confirmed -> Available oldugu icin state gecisini ayirmak daha okunabilir ve test edilebilir |
+| 2026-05-15 | Wrong user refund 401 | Baska kullanicinin odemesini iade etmeye calismak is kuralindan cok authorization ihlalidir; 409 bu durum icin zayif semantik olur |

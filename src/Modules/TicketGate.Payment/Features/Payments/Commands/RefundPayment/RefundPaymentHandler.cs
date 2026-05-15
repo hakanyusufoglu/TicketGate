@@ -32,9 +32,7 @@ internal sealed class RefundPaymentHandler(PaymentDbContext db)
 
         if (payment.UserId != request.UserId)
         {
-            return Result.Fail(AppError.Conflict(
-                "payment.user_mismatch",
-                $"Payment '{request.PaymentId}' belongs to another user."));
+            return Result.Fail(AppError.Unauthorized("This payment belongs to another user."));
         }
 
         if (payment.Status != PaymentStatus.Completed || string.IsNullOrWhiteSpace(payment.ExternalPaymentId))

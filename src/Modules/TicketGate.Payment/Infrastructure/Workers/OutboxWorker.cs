@@ -18,7 +18,7 @@ namespace TicketGate.Payment.Infrastructure.Workers;
 /// <summary>
 /// Outbox mesajlarini isleyen arka plan servisidir.
 /// OutboxSettings aralik ve batch degerleriyle calisir, harici payment gateway cagrilarini handler disinda yurutur.
-/// Basarili mesajlar processed olur; retry limiti asilan charge mesajlari PaymentFailed event'i yayinlar.
+/// Basarili mesajlar processed olur; retry limiti asilan charge veya refund mesajlari dead letter olarak loglanir.
 /// </summary>
 public sealed class OutboxWorker(
     IServiceScopeFactory scopeFactory,
@@ -78,7 +78,7 @@ public sealed class OutboxWorker(
 
     /// <summary>
     /// Tek bir outbox mesajini tipine gore gateway'e iletir.
-    /// Basarili charge/refund mesajlari processed olur; basarisiz charge mesajlari retry veya dead letter durumuna gecer.
+    /// PaymentInitiated charge gateway'e, PaymentRefundRequested refund gateway'e yonlendirilir.
     /// </summary>
     private async Task ProcessMessageAsync(
         OutboxMessage message,
@@ -199,5 +199,13 @@ public sealed class OutboxWorker(
         }
 
         message.MarkFailed(result.Error?.Message ?? "Payment refund gateway failed.");
+
+        if (message.IsDeadLetter(_settings.MaxRetryCount))
+        {
+            logger.LogCritical(
+                "Refund dead letter: {PaymentId} after {RetryCount} retries",
+                payload.PaymentId,
+                message.RetryCount);
+        }
     }
 }

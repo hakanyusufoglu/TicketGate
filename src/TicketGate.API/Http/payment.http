@@ -1,13 +1,46 @@
 @ticketId = 11111111-1111-1111-1111-111111111111
+@ticketId1 = 11111111-1111-1111-1111-111111111111
 @paymentId = 55555555-5555-5555-5555-555555555555
 @idempotencyKey = payment-demo-key-1
 
-### 1. Ticket reserve et
+### Tam iade dongusu - 1. Ticket reserve et
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
 Authorization: Bearer {{accessToken}}
 
-### Odeme baslat (happy path -> 201)
-# Once ticket reserve edilmis olmalidir.
+### Tam iade dongusu - 2. Odeme baslat
+POST {{baseUrl}}/api/v1/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "ticketId": "{{ticketId1}}",
+  "provider": "Stripe",
+  "idempotencyKey": "{{$guid}}"
+}
+
+### Tam iade dongusu - 3. Odeme durumu kontrol (Pending -> Completed)
+GET {{baseUrl}}/api/v1/payments/{{paymentId}}
+Authorization: Bearer {{accessToken}}
+
+### Tam iade dongusu - 4. Ticket durumu kontrol (Reserved -> Confirmed)
+GET {{baseUrl}}/api/v1/tickets/{{ticketId1}}
+
+### Tam iade dongusu - 5. Iade talebi
+POST {{baseUrl}}/api/v1/payments/{{paymentId}}/refund
+Authorization: Bearer {{accessToken}}
+
+### Tam iade dongusu - 6. Odeme durumu kontrol (Completed -> Refunded)
+GET {{baseUrl}}/api/v1/payments/{{paymentId}}
+Authorization: Bearer {{accessToken}}
+
+### Tam iade dongusu - 7. Ticket durumu kontrol (Confirmed -> Available)
+GET {{baseUrl}}/api/v1/tickets/{{ticketId1}}
+
+### Tam iade dongusu - 8. Ayni ticket tekrar reserve edilebilir mi?
+POST {{baseUrl}}/api/v1/tickets/{{ticketId1}}/reserve
+Authorization: Bearer {{accessToken}}
+
+### Odeme baslat (sabit idempotency key -> 201)
 POST {{baseUrl}}/api/v1/payments/initiate
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
@@ -62,6 +95,6 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/api/v1/payments/{{paymentId}}
 Authorization: Bearer {{accessToken}}
 
-### Iade
+### Iade - kullanici iade talebi; Confirmed -> Available, bilet tekrar satisa acilir
 POST {{baseUrl}}/api/v1/payments/{{paymentId}}/refund
 Authorization: Bearer {{accessToken}}
