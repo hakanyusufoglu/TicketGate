@@ -44,6 +44,8 @@ public sealed class BookingModule : IModule
 
         services.Configure<BookingSettings>(config.GetSection(BookingSettings.SectionName));
 
+        services.AddScoped<ITicketReservationReader, TicketReservationReader>();
+
         services.AddHostedService<TicketLockExpiredWorker>();
         services.AddHostedService<QueueDispatcher>();
 

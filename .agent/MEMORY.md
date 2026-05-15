@@ -24,7 +24,8 @@
 - [x] event.http sabit Guid'lere geçirildi
 - [x] TicketGate.Booking — P6 Virtual Waiting Room tamamlandi
 - [x] TicketGate.Booking — P7 TicketLockExpiredWorker tamamlandi
-- [ ] TicketGate.Payment — P8-P9
+- [x] TicketGate.Payment — P8 InitiatePayment + Outbox + Idempotency
+- [ ] TicketGate.Payment — P9 OutboxWorker
 - [ ] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
 - [ ] Production promptları — P12-P19
@@ -91,7 +92,7 @@
 | P5 | Booking — Ticket + ReserveTicket + Redis Lock | ✅ |
 | P6 | Booking — Virtual Waiting Room | ✅ |
 | P7 | Booking — TicketLockExpiredWorker | ✅ |
-| P8 | Payment — InitiatePayment + Outbox + Idempotency | ⏳ |
+| P8 | Payment — InitiatePayment + Outbox + Idempotency | ✅ |
 | P9 | Payment — OutboxWorker + dead letter | ⏳ |
 | P10 | Notification — SSE + Redis fan-out | ⏳ |
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ⏳ |
@@ -157,3 +158,20 @@
 |-------|-------|---------|
 | 2026-05-14 | Queue event source id alani SourceEventId | DomainEvent zaten EventId metadata property'sine sahip; source event id icin EventId kullanmak record parametresini bosa dusuruyor ve consumer hatasina yol acar |
 | 2026-05-14 | Waiting room kapasite grant Lua ile atomik | StringGet + INCR ayri komutlar olursa es zamanli join/dispatcher istekleri MaxCheckoutCapacity asabilir |
+
+## 2026-05-15 Payment P8 Notu
+
+- [x] TicketGate.Payment P8 tamamlandi
+- [x] Payment entity ve PaymentStatus enum eklendi
+- [x] OutboxMessage entity, outbox mesaj tipleri ve payment schema migration eklendi
+- [x] InitiatePayment command/validator/handler endpoint ve integration testleri eklendi
+- [x] IdempotencyKey unique index ve mevcut response donme davranisi eklendi
+- [x] MockPaymentGateway ve IPaymentGateway eklendi; handler gateway cagirmiyor
+- [x] RefundPayment ve GetPaymentById temel slicelari eklendi
+- [x] Booking reserved ticket kontrolu Core ITicketReservationReader contract'i ile yapiliyor; Payment Booking DbContext'e referans vermiyor
+- [x] Init_Payments migration local PostgreSQL payment schema'sina uygulandi
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-15 | ITicketReservationReader Core contract | Payment modulu Ticket Reserved/UserId kontrolu yapmak zorunda ama Booking projesine direkt referans yasak; contract siniri moduler monolith kuralini koruyor |
+| 2026-05-15 | Refund handler status'u hemen Refunded yapmiyor | Harici gateway sonucu P9 OutboxWorker tarafindan dogrulanmadan Completed -> Refunded yapmak production icin yanlis durum bildirimi olur |
