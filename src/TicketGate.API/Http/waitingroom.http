@@ -1,24 +1,15 @@
 ### Kuyruga katil (kapasite dolu senaryosu)
 POST {{baseUrl}}/api/v1/queue/{{eventId}}/join
-Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
-{"userId": "{{userId}}"}
-
 ### Pozisyon sorgula
-GET {{baseUrl}}/api/v1/queue/{{eventId}}/position?userId={{userId}}
+GET {{baseUrl}}/api/v1/queue/{{eventId}}/position
 Authorization: Bearer {{accessToken}}
 
 ### Ikinci kullanici katilir
 POST {{baseUrl}}/api/v1/queue/{{eventId}}/join
-Content-Type: application/json
 Authorization: Bearer {{accessToken}}
-
-{"userId": "{{userId2}}"}
 
 ### Kuyruktan cik
 DELETE {{baseUrl}}/api/v1/queue/{{eventId}}/leave
-Content-Type: application/json
 Authorization: Bearer {{accessToken}}
-
-{"userId": "{{userId}}"}

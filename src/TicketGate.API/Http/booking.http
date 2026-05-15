@@ -1,7 +1,6 @@
 @ticketId = 11111111-1111-1111-1111-111111111111
 @missingTicketId = 22222222-2222-2222-2222-222222222222
 @eventId = 33333333-3333-3333-3333-333333333333
-@userId = 44444444-4444-4444-4444-444444444444
 
 ### Generate Tickets (happy path -> 201)
 # Once calistirilir; seed event icin 50 ticket olusturur.
@@ -20,38 +19,22 @@ GET {{baseUrl}}/api/v1/events/{{eventId}}/seats
 ### Reserve (happy path -> 201)
 # Expected: HTTP 201 Created
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
-Content-Type: application/json
-
-{
-  "userId": "{{userId}}"
-}
+Authorization: Bearer {{accessToken}}
 
 ### Reserve (ayni bilet tekrar -> 409)
 # Expected: HTTP 409 Conflict
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
-Content-Type: application/json
-
-{
-  "userId": "{{userId}}"
-}
+Authorization: Bearer {{accessToken}}
 
 ### Confirm (happy path -> 204)
 # Expected: HTTP 204 No Content
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/confirm
-Content-Type: application/json
-
-{
-  "userId": "{{userId}}"
-}
+Authorization: Bearer {{accessToken}}
 
 ### Cancel (happy path -> 204)
 # Expected: HTTP 204 No Content
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/cancel
-Content-Type: application/json
-
-{
-  "userId": "{{userId}}"
-}
+Authorization: Bearer {{accessToken}}
 
 ### GetTicketById (happy path -> 200)
 # Expected: HTTP 200 OK
@@ -64,7 +47,7 @@ GET {{baseUrl}}/api/v1/tickets/{{ticketId}}
 # TTL dolunca worker Redis expired event'i yakalar ve ticket'i Available'a ceker.
 # Manuel kisa test icin Redis CLI:
 # redis-cli -p 6379 TTL ticket:{guid}:lock
-# redis-cli -p 6379 SET ticket:{guid}:lock {userId} EX 10
+# redis-cli -p 6379 SET ticket:{guid}:lock {jwt-user-id} EX 10
 
 ### GetTicketById (TTL sonrasi Available kontrolu -> 200)
 # Expected: HTTP 200 OK, status Available

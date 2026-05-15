@@ -1,16 +1,10 @@
 @ticketId = 11111111-1111-1111-1111-111111111111
 @paymentId = 55555555-5555-5555-5555-555555555555
-@userId = 44444444-4444-4444-4444-444444444444
 @idempotencyKey = payment-demo-key-1
 
 ### 1. Ticket reserve et
 POST {{baseUrl}}/api/v1/tickets/{{ticketId}}/reserve
-Content-Type: application/json
 Authorization: Bearer {{accessToken}}
-
-{
-  "userId": "{{userId}}"
-}
 
 ### Odeme baslat (happy path -> 201)
 # Once ticket reserve edilmis olmalidir.
@@ -70,9 +64,4 @@ Authorization: Bearer {{accessToken}}
 
 ### Iade
 POST {{baseUrl}}/api/v1/payments/{{paymentId}}/refund
-Content-Type: application/json
 Authorization: Bearer {{accessToken}}
-
-{
-  "userId": "{{userId}}"
-}

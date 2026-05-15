@@ -306,3 +306,30 @@ AÅŸaÄŸÄ±daki dosyalarÄ± sÄ±rayla oku, Ã¶zetle, devam et:
 
 
 
+## SON HANDOFF — 2026-05-15 Endpoint Security Refactor
+
+### Proje
+TicketGate — bilet satis platformu
+.NET 10 · Moduler Monolith · Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Core'a `ClaimExtensions` eklendi; endpointler UserId'yi JWT `NameIdentifier` veya `sub` claim'inden okuyor.
+- Booking `reserve`, `confirm`, `cancel` endpointleri body'den userId almiyor; mevcut command'lere endpoint katmaninda claim'den okunan UserId veriliyor.
+- WaitingRoom `join`, `position`, `leave` endpointleri body/query userId almiyor; JWT claim kullaniliyor.
+- Payment `refund` endpointi body'den userId almiyor; JWT claim kullaniliyor.
+- Identity, Event, Booking, WaitingRoom ve Payment endpoint dosyalari Swagger metadata acisindan tamamlandi.
+- HTTP orneklerinde body/query userId kullanimlari temizlendi.
+
+### Dogrulama
+- `dotnet test tests/TicketGate.Payment.Tests/TicketGate.Payment.Tests.csproj --no-restore --filter "FullyQualifiedName~ClaimExtensionsTests" -v minimal`: basarili, 3/3.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili.
+- `dotnet test TicketGate.sln --no-build -v normal`: basarili; toplam 55 test gecti.
+
+### Dikkat
+- Command ve handler sozlesmelerine bu refactor'da dokunulmadi.
+- `ClaimExtensions.GetUserId()` yetkili endpointlerde kullanilmak uzere tasarlandi; claim eksik/gecersizse `InvalidOperationException` firlatir.
+
+### Siradaki Gorev
+P8 Refactor + P9 OutboxWorker (devam)
+
+---

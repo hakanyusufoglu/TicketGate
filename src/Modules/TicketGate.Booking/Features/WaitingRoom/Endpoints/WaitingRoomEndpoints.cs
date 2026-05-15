@@ -26,40 +26,69 @@ public static class WaitingRoomEndpoints
 
         group.MapPost("/{eventId:guid}/join", async (
             Guid eventId,
-            [FromBody] QueueUserRequest request,
             [FromServices] ISender sender,
+            HttpContext context,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new JoinQueueCommand(eventId, request.UserId), cancellationToken);
+            var userId = context.GetUserId();
+            var result = await sender.Send(new JoinQueueCommand(eventId, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
-        });
+        })
+            .WithName("JoinQueue")
+            .WithSummary("Waiting room kuyruguna katilir")
+            .WithDescription("""
+                Kullanici virtual waiting room kuyruguna eklenir.
+                Kapasite bossa direkt checkout hakki verilebilir; kapasite doluysa Redis Sorted Set'e ZADD NX ile eklenir.
+                UserId JWT token'dan okunur; body'den alinmaz.
+                """)
+            .Produces<JoinQueueResponse>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+            .RequireAuthorization();
 
         group.MapGet("/{eventId:guid}/position", async (
             Guid eventId,
-            Guid userId,
             [FromServices] ISender sender,
+            HttpContext context,
             CancellationToken cancellationToken) =>
         {
+            var userId = context.GetUserId();
             var result = await sender.Send(new GetQueuePositionQuery(eventId, userId), cancellationToken);
             return result.ToHttpResult();
-        });
+        })
+            .WithName("GetQueuePosition")
+            .WithSummary("Waiting room pozisyonunu getirir")
+            .WithDescription("""
+                Kullanici waiting room pozisyonunu Redis ZRANK ile okur.
+                UserId JWT token'dan okunur; query string'den alinmaz.
+                """)
+            .Produces<QueuePositionDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization();
 
         group.MapDelete("/{eventId:guid}/leave", async (
             Guid eventId,
-            [FromBody] QueueUserRequest request,
             [FromServices] ISender sender,
+            HttpContext context,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new LeaveQueueCommand(eventId, request.UserId), cancellationToken);
+            var userId = context.GetUserId();
+            var result = await sender.Send(new LeaveQueueCommand(eventId, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
-        });
+        })
+            .WithName("LeaveQueue")
+            .WithSummary("Waiting room'dan cikar")
+            .WithDescription("""
+                Kullanici virtual waiting room kuyrugundan cikarilir.
+                Redis Sorted Set uzerinden ZREM ile silinir.
+                UserId JWT token'dan okunur; body'den alinmaz.
+                """)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization();
 
         return app;
     }
-
-    /// <summary>
-    /// Waiting room endpoint'lerinde kullanici id tasiyan HTTP request govdesidir.
-    /// Gateway auth tamamlanana kadar kullanici bilgisi bu alan uzerinden alinir.
-    /// </summary>
-    private sealed record QueueUserRequest(Guid UserId);
 }

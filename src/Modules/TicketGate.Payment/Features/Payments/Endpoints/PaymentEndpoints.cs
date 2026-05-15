@@ -49,20 +49,23 @@ public static class PaymentEndpoints
 
         group.MapPost("/{id:guid}/refund", async (
             Guid id,
-            RefundPaymentRequest request,
             ISender sender,
+            HttpContext context,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new RefundPaymentCommand(id, request.UserId), cancellationToken);
+            var userId = context.GetUserId();
+            var result = await sender.Send(new RefundPaymentCommand(id, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
         })
             .WithName("RefundPayment")
             .WithSummary("Odeme iadesi baslatir")
             .WithDescription("""
                 Tamamlanmis odeme icin iade surecini outbox uzerinden baslatir.
+                UserId JWT token'dan okunur; body'den alinmaz.
                 Harici gateway endpoint icinde cagrilmaz; OutboxWorker iade mesajini isler.
                 """)
             .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
@@ -88,10 +91,4 @@ public static class PaymentEndpoints
 
         return app;
     }
-
-    /// <summary>
-    /// Iade endpoint'i icin kullanici id request govdesidir.
-    /// Gateway auth tamamlanana kadar kullanici bilgisi bu alan uzerinden iletilir.
-    /// </summary>
-    private sealed record RefundPaymentRequest(Guid UserId);
 }

@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif GÃ¶rev
-P10 — Notification SSE
+P8 Refactor + P9 OutboxWorker (devam)
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -52,5 +52,8 @@ Payment P8 tamamlandi. InitiatePayment handler idempotency key ile once mevcut p
 
 ## Son Tamamlanan Ara Gorev
 Payment P9 tamamlandi. InitiatePayment artik UserId ve Amount'u request body'den almiyor; UserId JWT claim'den, tutar ticket price contract'inden okunuyor. OutboxWorker PaymentInitiated ve PaymentRefundRequested mesajlarini isliyor; basarili charge PaymentCompleted event'i, retry limiti asilan charge PaymentFailed event'i yayinliyor. Booking tarafinda PaymentCompleted/PaymentFailed handler'lari ticket state ve Redis lock cleanup akislarini domain event uzerinden tamamliyor.
+
+## Son Tamamlanan Ara Gorev
+Endpoint security refactor tamamlandi. Booking reserve/confirm/cancel, WaitingRoom join/position/leave ve Payment refund endpointleri UserId'yi body/query yerine JWT claim'den HttpContext.GetUserId() ile okuyor. ClaimExtensions Core'a eklendi; endpoint Swagger metadata eksikleri WithSummary, WithDescription ve Produces ile tamamlandi. Command ve handler sozlesmelerine dokunulmadi.
 
 

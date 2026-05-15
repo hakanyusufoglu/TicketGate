@@ -192,3 +192,17 @@
 |-------|-------|---------|
 | 2026-05-15 | Payment event contract'lari Core'a tasindi | Booking modulu Payment projesine referans veremez; integration event contract'i shared kernel sinirinda kalmali |
 | 2026-05-15 | Payment handler BookingDbContext kullanmiyor | Prompt'taki onerinin aksine bu moduller arasi direkt referans kuralini ihlal ederdi; mevcut Core contract genisletildi |
+
+## 2026-05-15 Endpoint Security Refactor Notu
+
+- [x] Security refactor — userId JWT'den okunuyor
+- [x] ClaimExtensions Core'a eklendi
+- [x] Tum endpoint'lere WithSummary + WithDescription + Produces eklendi
+- [x] Booking reserve/confirm/cancel endpointleri userId body yerine HttpContext.GetUserId() kullaniyor
+- [x] WaitingRoom join/position/leave endpointleri userId body/query yerine JWT claim kullaniyor
+- [x] Payment refund endpoint'i userId body yerine JWT claim kullaniyor
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-15 | UserId endpoint katmaninda JWT claim'den okunuyor | Client body/query ile baska kullanici adina islem yapamamali; command ve handler sozlesmeleri korunarak guvenlik siniri endpoint'te kapatildi |
+| 2026-05-15 | ClaimExtensions Core'da tutuluyor | Moduller arasinda tekrar eden claim okuma kodu yerine shared kernel extension'i kullanildi |
