@@ -399,3 +399,79 @@ internal sealed class ReserveTicketHandler(
 ❌ await Task.Delay(5000)
 ❌ if (retryCount >= 3)
 ```
+
+---
+
+## Güvenlik kuralları — HTTP input (DEĞİŞTİRİLEMEZ)
+
+### Finansal ve kimlik verileri client'tan alınamaz
+
+```
+❌ amount / price body'den alınamaz → server DB'den hesaplar
+❌ userId body'den alınamaz → JWT claim'den okunur
+❌ ticketPrice body'den alınamaz → ticket.Price'dan alınır
+```
+
+### Doğru payment request formatı
+
+```json
+{
+  "ticketId": "reserved-ticket-id",
+  "provider": "Stripe",
+  "idempotencyKey": "client-generated-guid"
+}
+```
+
+### Handler içinde doğru kullanım
+
+```csharp
+// userId → JWT'den oku, body'den alma
+var userId = Guid.Parse(
+    httpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+// amount → ticket fiyatından hesapla, body'den alma
+var ticket = await db.Tickets
+    .FirstOrDefaultAsync(t => t.Id == cmd.TicketId, ct);
+var amount = ticket.Price;
+```
+
+### IdempotencyKey kuralı
+
+```
+✅ IdempotencyKey client'tan alınır — retry koruması için
+✅ Provider client'tan alınır — kullanıcı seçimi
+✅ TicketId client'tan alınır
+
+IdempotencyKey nasıl çalışır:
+- Frontend "Ödeme Yap" butonuna basılınca UUID üretir
+- Network timeout veya retry'da aynı key gönderilir
+- Yeni ödeme denemesinde yeni key üretilir
+- Server aynı key'i görürse mevcut response'u döner
+```
+
+### Swagger endpoint açıklaması (zorunlu)
+
+Her endpoint'e şunlar eklenmelidir:
+
+```csharp
+app.MapPost("/api/v1/payments/initiate", handler)
+    .WithName("InitiatePayment")
+    .WithSummary("Ödeme başlatır")
+    .WithDescription("""
+        Ticket için ödeme sürecini başlatır.
+        amount JWT'deki userId ve ticket fiyatından hesaplanır — body'den alınmaz.
+        IdempotencyKey ile network retry'da çifte ödeme engellenir.
+        """)
+    .WithTags("Payments")
+    .Produces<InitiatePaymentResponse>(StatusCodes.Status201Created)
+    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+    .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+    .RequireAuthorization();
+```
+
+Zorunlu metodlar:
+- WithName()        → operasyon adı (İngilizce, PascalCase)
+- WithSummary()     → kısa açıklama (Türkçe, tek satır)
+- WithDescription() → detay ve kritik notlar (Türkçe)
+- Produces<T>()     → tüm olası response tipleri
+- RequireAuthorization() → korumalı endpoint'lerde zorunlu

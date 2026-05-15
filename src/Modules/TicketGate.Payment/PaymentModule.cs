@@ -9,6 +9,7 @@ using TicketGate.Payment.Features.Payments.Endpoints;
 using TicketGate.Payment.Infrastructure;
 using TicketGate.Payment.Infrastructure.Gateways;
 using TicketGate.Payment.Infrastructure.Persistence;
+using TicketGate.Payment.Infrastructure.Workers;
 
 namespace TicketGate.Payment;
 
@@ -37,7 +38,9 @@ public sealed class PaymentModule : IModule
 
         services.Configure<OutboxSettings>(config.GetSection(OutboxSettings.SectionName));
 
+        services.AddHttpContextAccessor();
         services.AddScoped<IPaymentGateway, MockPaymentGateway>();
+        services.AddHostedService<OutboxWorker>();
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }
 

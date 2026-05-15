@@ -26,9 +26,10 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         await ResetAsync();
         var ticketId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        SetReservedTicket(ticketId, userId);
+        SetReservedTicket(ticketId, userId, 725m);
+        SetCurrentUser(userId);
 
-        var command = new InitiatePaymentCommand(ticketId, userId, 500m, "Stripe", "payment-key-1");
+        var command = new InitiatePaymentCommand(ticketId, "Stripe", "payment-key-1");
 
         var result = await SendScopedAsync(command);
 
@@ -44,7 +45,7 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         payment.Id.Should().Be(result.Value.PaymentId);
         payment.TicketId.Should().Be(ticketId);
         payment.UserId.Should().Be(userId);
-        payment.Amount.Should().Be(500m);
+        payment.Amount.Should().Be(725m);
         payment.Status.Should().Be(PaymentStatus.Pending);
         payment.IdempotencyKey.Should().Be("payment-key-1");
 
@@ -52,6 +53,32 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         outbox.Payload.Should().Contain(payment.Id.ToString());
         outbox.ProcessedAt.Should().BeNull();
         outbox.RetryCount.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Login token'indaki standart sub claim'i ile odeme baslatilabildigini dogrular.
+    /// Swagger/JWT akisi NameIdentifier map'ine bagimli kalmadan calismalidir.
+    /// </summary>
+    [Fact]
+    public async Task Handle_SubjectClaim_CreatesPaymentAndOutbox()
+    {
+        await ResetAsync();
+        var ticketId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        SetReservedTicket(ticketId, userId);
+        SetCurrentUserSubject(userId);
+
+        var result = await SendScopedAsync(new InitiatePaymentCommand(
+            ticketId,
+            "Stripe",
+            "payment-key-sub"));
+
+        result.IsSuccess.Should().BeTrue();
+
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+        var payment = await db.Payments.SingleAsync();
+        payment.UserId.Should().Be(userId);
     }
 
     /// <summary>
@@ -65,7 +92,8 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         var ticketId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         SetReservedTicket(ticketId, userId);
-        var command = new InitiatePaymentCommand(ticketId, userId, 500m, "Stripe", "payment-key-2");
+        SetCurrentUser(userId);
+        var command = new InitiatePaymentCommand(ticketId, "Stripe", "payment-key-2");
 
         var first = await SendScopedAsync(command);
         var second = await SendScopedAsync(command);
@@ -90,11 +118,10 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
     {
         await ResetAsync();
         ClearReservedTickets();
+        SetCurrentUser(Guid.NewGuid());
 
         var result = await SendScopedAsync(new InitiatePaymentCommand(
             Guid.NewGuid(),
-            Guid.NewGuid(),
-            500m,
             "Stripe",
             "payment-key-3"));
 
@@ -114,11 +141,10 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         await ResetAsync();
         var ticketId = Guid.NewGuid();
         SetReservedTicket(ticketId, Guid.NewGuid());
+        SetCurrentUser(Guid.NewGuid());
 
         var result = await SendScopedAsync(new InitiatePaymentCommand(
             ticketId,
-            Guid.NewGuid(),
-            500m,
             "Stripe",
             "payment-key-4"));
 
@@ -126,6 +152,30 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         result.Error.Should().NotBeNull();
         result.Error!.Type.Should().Be(AppErrorType.Conflict);
         result.Error.Code.Should().Be("ticket.lock_owner_mismatch");
+    }
+
+    /// <summary>
+    /// JWT NameIdentifier claim'i yoksa odeme baslatmanin 401 dondugunu dogrular.
+    /// UserId body'den alinmadigi icin kimliksiz request payment olusturmamalidir.
+    /// </summary>
+    [Fact]
+    public async Task Handle_MissingUserClaim_Returns401()
+    {
+        await ResetAsync();
+        ClearCurrentUser();
+
+        var result = await SendScopedAsync(new InitiatePaymentCommand(
+            Guid.NewGuid(),
+            "Stripe",
+            "payment-key-5"));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNull();
+        result.Error!.Type.Should().Be(AppErrorType.Unauthorized);
+
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+        (await db.Payments.CountAsync()).Should().Be(0);
     }
 
     /// <summary>

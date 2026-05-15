@@ -32,4 +32,8 @@
     <ProjectReference Include="..\TicketGate.TestInfrastructure\TicketGate.TestInfrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

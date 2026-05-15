@@ -23,7 +23,7 @@ internal sealed class TicketReservationReader(BookingDbContext db) : ITicketRese
         var ticket = await db.Tickets
             .AsNoTracking()
             .Where(item => item.Id == ticketId && item.Status == TicketStatus.Reserved)
-            .Select(item => new { item.Id, item.LockedByUserId })
+            .Select(item => new { item.Id, item.LockedByUserId, item.Price })
             .SingleOrDefaultAsync(cancellationToken);
 
         if (ticket?.LockedByUserId is null)
@@ -31,6 +31,9 @@ internal sealed class TicketReservationReader(BookingDbContext db) : ITicketRese
             return Result<TicketReservationInfo>.Fail(TicketReservationErrors.NotReserved(ticketId));
         }
 
-        return Result<TicketReservationInfo>.Ok(new TicketReservationInfo(ticket.Id, ticket.LockedByUserId.Value));
+        return Result<TicketReservationInfo>.Ok(new TicketReservationInfo(
+            ticket.Id,
+            ticket.LockedByUserId.Value,
+            ticket.Price));
     }
 }

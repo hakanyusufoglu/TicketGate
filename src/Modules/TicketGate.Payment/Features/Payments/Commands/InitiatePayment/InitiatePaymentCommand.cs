@@ -3,10 +3,8 @@ using TicketGate.Core.Results;
 
 namespace TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
 
-/// <summary>Odeme baslatma istegi. IdempotencyKey client retry'larinda ayni response'u dondurmek icin kullanilir.</summary>
+/// <summary>Odeme baslatma istegi. UserId JWT'den, Amount ticket fiyatindan okunur; IdempotencyKey retry korumasi saglar.</summary>
 public sealed record InitiatePaymentCommand(
     Guid TicketId,
-    Guid UserId,
-    decimal Amount,
     string Provider,
     string IdempotencyKey) : IRequest<Result<InitiatePaymentResponse>>;

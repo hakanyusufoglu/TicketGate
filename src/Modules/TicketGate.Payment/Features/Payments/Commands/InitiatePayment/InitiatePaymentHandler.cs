@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Contracts;
 using TicketGate.Core.Errors;
@@ -10,22 +12,30 @@ using PaymentEntity = TicketGate.Payment.Domain.Entities.Payment;
 namespace TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
 
 /// <summary>
-/// Odeme baslatma komutunu isler. Payment ve OutboxMessage'i tek transaction'da atomik yazar.
-/// Stripe veya PayPal bu handler'da cagrilmaz; idempotency key tekrar eden istekleri mevcut response ile yanitlar.
+/// Odeme baslatma komutunu isler. UserId JWT claim'den, Amount ticket fiyatindan okunur.
+/// Payment ve OutboxMessage tek transaction'da atomik yazilir; Stripe veya PayPal burada cagrilmaz.
 /// </summary>
 internal sealed class InitiatePaymentHandler(
     PaymentDbContext db,
-    ITicketReservationReader ticketReservationReader)
+    ITicketReservationReader ticketReservationReader,
+    IHttpContextAccessor httpContextAccessor)
     : IRequestHandler<InitiatePaymentCommand, Result<InitiatePaymentResponse>>
 {
+    private const string SubjectClaimType = "sub";
+
     /// <summary>
-    /// Idempotency kontrolu, reserved ticket dogrulamasi ve atomik Payment + Outbox yazimini yurutur.
-    /// Harici gateway cagrisi yapilmaz; outbox mesaji worker tarafindan islenecek dayanirli kayittir.
+    /// JWT userId okuma, idempotency kontrolu, reserved ticket sahipligi ve atomik Payment + Outbox yazimini yurutur.
+    /// Amount client body yerine ticket fiyatindan hesaplanarak manipulasyon engellenir.
     /// </summary>
     public async Task<Result<InitiatePaymentResponse>> Handle(
         InitiatePaymentCommand request,
         CancellationToken cancellationToken)
     {
+        if (!TryGetUserId(out var userId))
+        {
+            return Result<InitiatePaymentResponse>.Fail(AppError.Unauthorized("Valid user claim is required."));
+        }
+
         var existingPayment = await db.Payments
             .AsNoTracking()
             .Where(payment => payment.IdempotencyKey == request.IdempotencyKey)
@@ -43,7 +53,7 @@ internal sealed class InitiatePaymentHandler(
             return Result<InitiatePaymentResponse>.Fail(ticketResult.Error!);
         }
 
-        if (ticketResult.Value!.UserId != request.UserId)
+        if (ticketResult.Value!.UserId != userId)
         {
             return Result<InitiatePaymentResponse>.Fail(AppError.Conflict(
                 "ticket.lock_owner_mismatch",
@@ -54,8 +64,8 @@ internal sealed class InitiatePaymentHandler(
 
         var payment = PaymentEntity.Create(
             request.TicketId,
-            request.UserId,
-            request.Amount,
+            userId,
+            ticketResult.Value.Price,
             request.IdempotencyKey);
 
         var outboxMessage = OutboxMessage.Create(
@@ -76,5 +86,18 @@ internal sealed class InitiatePaymentHandler(
         return Result<InitiatePaymentResponse>.Ok(new InitiatePaymentResponse(
             payment.Id,
             payment.Status.ToString()));
+    }
+
+    /// <summary>
+    /// JWT icindeki kullanici id bilgisini okur.
+    /// NameIdentifier map'i olmayan Swagger/JWT akislarinda standart sub claim'i de desteklenir.
+    /// </summary>
+    private bool TryGetUserId(out Guid userId)
+    {
+        var principal = httpContextAccessor.HttpContext?.User;
+        var userIdClaim = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? principal?.FindFirst(SubjectClaimType)?.Value;
+
+        return Guid.TryParse(userIdClaim, out userId);
     }
 }

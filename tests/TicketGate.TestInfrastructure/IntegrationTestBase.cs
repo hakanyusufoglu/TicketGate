@@ -67,7 +67,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             .WithCommand("redis-server", "--notify-keyspace-events", "KEx")
             .Build();
 
-        await Task.WhenAll(_postgres.StartAsync(), _redis.StartAsync());
+        await _postgres.StartAsync();
+        await _redis.StartAsync();
 
         await EnsureSchemasAsync();
 

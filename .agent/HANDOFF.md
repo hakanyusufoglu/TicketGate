@@ -1,4 +1,37 @@
-﻿## SON HANDOFF — 2026-05-15 Payment P8
+﻿## SON HANDOFF — 2026-05-15 Payment P9
+
+### Proje
+TicketGate — bilet satis platformu
+.NET 10 · Moduler Monolith · Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- InitiatePayment guvenlik refactor'u yapildi: `userId` ve `amount` request body'sinden kaldirildi.
+- UserId JWT `ClaimTypes.NameIdentifier` claim'inden okunuyor; claim yok/gecersizse Unauthorized donuyor.
+- Amount client'tan alinmiyor; ticket price `ITicketReservationReader` contract'i uzerinden okunuyor.
+- Prompt'taki `BookingDbContext` injection onerisi uygulanmadi; bu moduller arasi direkt proje referansi kuralini ihlal ederdi.
+- OutboxWorker eklendi: batch polling, retry, dead letter, charge/refund message handling.
+- PaymentCompleted/PaymentFailed/PaymentRefunded event contract'lari Core'a alindi; Payment modulu event kopyasi kaldirildi.
+- Booking PaymentCompleted ve PaymentFailed handler'lari eklendi; ticket Confirmed/Available akisinda Redis lock temizleniyor.
+- Payment endpointleri authorization ve Swagger metadata ile guncellendi.
+- Payment ve Booking integration testleri guncellendi; OutboxWorker testleri eklendi.
+- Testcontainers altyapisinda PostgreSQL ve Redis container start sirali hale getirildi; Docker named pipe timeout flake'i azaltildi.
+
+### Dogrulama
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili.
+- `dotnet test TicketGate.sln --no-build -v normal`: basarili.
+- Test toplamlari: Event 10/10, Identity 10/10, Payment 10/10, Booking 21/21.
+- Mevcut NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Dikkat
+- Kullanici son talimatta commit istemedi; commit atilmadi.
+- RefundPayment hala `UserId` alanini body'den aliyor; bu da ayni guvenlik prensibine gore sonraki refactor adayi.
+- GetPaymentById endpoint'i authorization istiyor ama owner bazli yetki kontrolu yapmiyor; production icin eksik.
+
+### Siradaki Gorev
+P10 — Notification SSE + Redis Pub/Sub fan-out
+
+---
+## SON HANDOFF — 2026-05-15 Payment P8
 
 ### Proje
 TicketGate — bilet satis platformu
@@ -267,6 +300,7 @@ AÅŸaÄŸÄ±daki dosyalarÄ± sÄ±rayla oku, Ã¶zetle, devam et:
 - Claude Code: CLAUDE.md â†’ .agent/ dosyalarÄ±na referans ver
 - Cursor: .cursorrules â†’ aynÄ± yÃ¶nlendirme
 - Web arayÃ¼zleri: HANDOFF.md iÃ§eriÄŸini ilk mesaj olarak yapÄ±ÅŸtÄ±r
+
 
 
 

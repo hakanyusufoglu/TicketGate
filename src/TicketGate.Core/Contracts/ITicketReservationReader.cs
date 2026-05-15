@@ -18,8 +18,8 @@ public interface ITicketReservationReader
         CancellationToken cancellationToken);
 }
 
-/// <summary>Reserved ticket ve lock sahibi kullanici bilgisini tasir.</summary>
-public sealed record TicketReservationInfo(Guid TicketId, Guid UserId);
+/// <summary>Reserved ticket, lock sahibi kullanici ve server tarafindaki ticket fiyat bilgisini tasir.</summary>
+public sealed record TicketReservationInfo(Guid TicketId, Guid UserId, decimal Price);
 
 /// <summary>
 /// Ticket reservation sozlesmesinin ortak hata uretim yardimcisidir.

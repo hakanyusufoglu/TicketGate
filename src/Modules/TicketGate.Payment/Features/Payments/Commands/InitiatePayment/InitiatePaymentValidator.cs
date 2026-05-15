@@ -12,8 +12,6 @@ internal sealed class InitiatePaymentValidator : AbstractValidator<InitiatePayme
     public InitiatePaymentValidator()
     {
         RuleFor(command => command.TicketId).NotEmpty();
-        RuleFor(command => command.UserId).NotEmpty();
-        RuleFor(command => command.Amount).GreaterThan(0);
         RuleFor(command => command.Provider)
             .NotEmpty()
             .Must(provider => provider is "Stripe" or "PayPal");

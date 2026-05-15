@@ -25,7 +25,7 @@
 - [x] TicketGate.Booking — P6 Virtual Waiting Room tamamlandi
 - [x] TicketGate.Booking — P7 TicketLockExpiredWorker tamamlandi
 - [x] TicketGate.Payment — P8 InitiatePayment + Outbox + Idempotency
-- [ ] TicketGate.Payment — P9 OutboxWorker
+- [x] TicketGate.Payment — P9 OutboxWorker
 - [ ] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
 - [ ] Production promptları — P12-P19
@@ -93,7 +93,7 @@
 | P6 | Booking — Virtual Waiting Room | ✅ |
 | P7 | Booking — TicketLockExpiredWorker | ✅ |
 | P8 | Payment — InitiatePayment + Outbox + Idempotency | ✅ |
-| P9 | Payment — OutboxWorker + dead letter | ⏳ |
+| P9 | Payment — OutboxWorker + dead letter | ✅ |
 | P10 | Notification — SSE + Redis fan-out | ⏳ |
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ⏳ |
 | P12 | Seed data + Migration stratejisi | 🔄 |
@@ -175,3 +175,20 @@
 |-------|-------|---------|
 | 2026-05-15 | ITicketReservationReader Core contract | Payment modulu Ticket Reserved/UserId kontrolu yapmak zorunda ama Booking projesine direkt referans yasak; contract siniri moduler monolith kuralini koruyor |
 | 2026-05-15 | Refund handler status'u hemen Refunded yapmiyor | Harici gateway sonucu P9 OutboxWorker tarafindan dogrulanmadan Completed -> Refunded yapmak production icin yanlis durum bildirimi olur |
+
+## 2026-05-15 Payment P9 Notu
+
+- [x] InitiatePayment refactor tamamlandi; UserId body'den kaldirildi ve JWT NameIdentifier claim'inden okunuyor.
+- [x] InitiatePayment amount refactor tamamlandi; Amount body'den kaldirildi ve ticket price Core ITicketReservationReader contract'i uzerinden okunuyor.
+- [x] ITicketReservationReader contract'i Price bilgisi tasiyacak sekilde genisletildi; Payment modulu Booking projesine direkt referans vermiyor.
+- [x] OutboxWorker tamamlandi; PaymentInitiated ve PaymentRefundRequested mesajlarini batch ile isliyor.
+- [x] Gateway basarili charge sonucunda Payment Completed oluyor, outbox processed isaretleniyor ve PaymentCompleted event'i yayinlaniyor.
+- [x] Gateway basarisiz charge sonucunda RetryCount artiyor; MaxRetryCount sonrasi Payment Failed oluyor ve PaymentFailed event'i yayinlaniyor.
+- [x] Booking PaymentCompleted/PaymentFailed handler'lari eklendi; ticket Confirmed/Available akisinda Redis lock temizleniyor.
+- [x] Payment endpointleri authorization ve OpenAPI metadata ile guncellendi.
+- [x] Testcontainers altyapisinda PostgreSQL ve Redis start sirali hale getirildi; Docker named pipe timeout flake'i azaltildi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-15 | Payment event contract'lari Core'a tasindi | Booking modulu Payment projesine referans veremez; integration event contract'i shared kernel sinirinda kalmali |
+| 2026-05-15 | Payment handler BookingDbContext kullanmiyor | Prompt'taki onerinin aksine bu moduller arasi direkt referans kuralini ihlal ederdi; mevcut Core contract genisletildi |
