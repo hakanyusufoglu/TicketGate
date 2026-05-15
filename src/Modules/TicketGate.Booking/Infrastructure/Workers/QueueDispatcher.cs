@@ -5,13 +5,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
-using TicketGate.Booking.Domain.Events;
+using TicketGate.Core.Events;
 
 namespace TicketGate.Booking.Infrastructure.Workers;
 
 /// <summary>
 /// Waiting room sira yoneticisi. Her ayarli aralikta Redis Sorted Set kuyruklarini tarar.
-/// ZPOPMIN ile siradaki kullanicilari alir ve Redis Pub/Sub uzerinden your_turn bildirimi yayinlar.
+/// ZPOPMIN ile siradaki kullanicilari alir ve QueueTurnGranted event'i yayinlar.
 /// Kapasite MaxCheckoutCapacity - active_checkout sayisi ile hesaplanir; hatalar worker dongusunu dusurmez.
 /// </summary>
 public sealed class QueueDispatcher(
@@ -22,7 +22,6 @@ public sealed class QueueDispatcher(
 {
     private const string WaitingRoomPrefix = "waitingroom:";
     private const string ActiveCheckoutPrefix = "active_checkout:";
-    private const string QueueTurnEventName = "your_turn";
 
     /// <summary>
     /// QueueDispatcherIntervalSeconds aralikla calisir.
@@ -73,7 +72,7 @@ public sealed class QueueDispatcher(
 
     /// <summary>
     /// Bos kapasiteyi hesaplar: MaxCheckoutCapacity - active_checkout.
-    /// ZPOPMIN ile batch kadar kullanici alir, her biri icin INCR ve Pub/Sub bildirimi yapar.
+    /// ZPOPMIN ile batch kadar kullanici alir, her biri icin INCR ve QueueTurnGranted event'i uretir.
     /// </summary>
     private async Task ProcessQueueAsync(Guid eventId, CancellationToken cancellationToken)
     {
@@ -88,8 +87,10 @@ public sealed class QueueDispatcher(
         foreach (var userId in users)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await NotifyUserAsync(db, userId, eventId, cancellationToken);
+            await NotifyUserAsync(userId, eventId, cancellationToken);
         }
+
+        await PublishRemainingPositionsAsync(db, eventId, cancellationToken);
     }
 
     /// <summary>
@@ -135,24 +136,55 @@ public sealed class QueueDispatcher(
     }
 
     /// <summary>
-    /// Redis PUBLISH queue:{userId}:turn kanalina mesaj gonderir.
-    /// SSE endpoint P10'da bu kanali dinler; simdilik direkt Pub/Sub kullanilir.
+    /// Sira verilen kullanici icin QueueTurnGranted entegrasyon event'i yayinlar.
+    /// Redis Pub/Sub fan-out Notification modulu tarafindan yapildigi icin Booking modulu kanal formatina baglanmaz.
     /// </summary>
     private async Task NotifyUserAsync(
-        IDatabase db,
         string userId,
         Guid eventId,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var payload = $$"""{"event":"{{QueueTurnEventName}}","eventId":"{{eventId}}","userId":"{{userId}}"}""";
-        await db.PublishAsync(new RedisChannel($"queue:{userId}:turn", RedisChannel.PatternMode.Literal), payload);
 
         if (Guid.TryParse(userId, out var parsedUserId))
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
             await publisher.Publish(new QueueTurnGranted(eventId, parsedUserId, Position: 0), cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Dispatcher turu sonrasi kuyrukta kalan kullanicilarin yeni pozisyonlarini yayinlar.
+    /// ZPOPMIN sonrasi sira degistigi icin UI polling yapmadan queue_position eventi alir.
+    /// </summary>
+    private async Task PublishRemainingPositionsAsync(
+        IDatabase db,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var remainingUsers = await db.SortedSetRangeByRankAsync(ToWaitingRoomKey(eventId), order: Order.Ascending);
+        var total = remainingUsers.LongLength;
+
+        if (total == 0)
+        {
+            return;
+        }
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
+        for (var index = 0; index < remainingUsers.Length; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var value = remainingUsers[index].ToString();
+            if (Guid.TryParse(value, out var parsedUserId))
+            {
+                await publisher.Publish(
+                    new QueuePositionChanged(eventId, parsedUserId, Position: index + 1, Total: total),
+                    cancellationToken);
+            }
         }
     }
 

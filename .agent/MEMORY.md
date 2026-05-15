@@ -30,7 +30,7 @@
 - [x] PaymentRefundedHandler Booking'e eklendi
 - [x] Ticket Confirmed -> Available donusumu calisiyor
 - [x] CancelTicket vs Refund ayrimi netlesti
-- [ ] TicketGate.Notification — P10
+- [x] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
 - [ ] Production promptları — P12-P19
 
@@ -98,7 +98,7 @@
 | P7 | Booking — TicketLockExpiredWorker | ✅ |
 | P8 | Payment — InitiatePayment + Outbox + Idempotency | ✅ |
 | P9 | Payment — OutboxWorker + dead letter | ✅ |
-| P10 | Notification — SSE + Redis fan-out | ⏳ |
+| P10 | Notification — SSE + Redis fan-out | ✅ |
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ⏳ |
 | P12 | Seed data + Migration stratejisi | 🔄 |
 | P13 | Prometheus + Grafana | ⏳ |
@@ -234,3 +234,18 @@
 - [x] PaymentCompleted/Failed handler Booking'e testleriyle eklendi; Redis lock temizligi dogrulandi
 - [x] Tam odeme dongusu calisiyor: Reserve -> Initiate -> Worker -> Complete -> Confirm
 - [x] Tam iade dongusu calisiyor: Refund -> Worker -> Refunded -> Available
+
+## 2026-05-15 Notification P10 Notu
+
+- [x] Notification SSE tamamlandi
+- [x] 4 event tipi implement edildi: seat_status_changed, your_turn, payment_confirmed, queue_position
+- [x] SsePublisher entegrasyon event'lerini dinleyip Redis Pub/Sub kanallarina yayinliyor
+- [x] QueuePositionPublisher eklendi
+- [x] Ticket ve user SSE endpoint'leri eklendi; heartbeat SseSettings uzerinden okunuyor
+- [x] Booking event contract'lari moduller arasi direkt referans olmamasi icin Core.Events altina tasindi
+- [x] QueueDispatcher dogrudan Redis publish yerine QueueTurnGranted event'i yayinlayacak sekilde guncellendi
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-15 | Booking event contract'lari Core'a tasindi | Notification modulu Booking projesine direkt referans veremez; event contract'i shared kernel sinirinda tutuldu |
+| 2026-05-15 | TicketConfirmed payment_confirmed yayinlamiyor | PaymentCompleted zaten payment_confirmed kaynagi; iki event'ten ayni bildirim uretmek client'a duplicate mesaj gonderirdi |

@@ -1,0 +1,9 @@
+### Koltuk durumu stream (tarayicida ac)
+GET {{baseUrl}}/api/v1/sse/ticket/{{ticketId1}}
+Authorization: Bearer {{accessToken}}
+Accept: text/event-stream
+
+### Kullanici bildirimleri stream
+GET {{baseUrl}}/api/v1/sse/user
+Authorization: Bearer {{accessToken}}
+Accept: text/event-stream

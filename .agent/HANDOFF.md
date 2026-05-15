@@ -1,4 +1,36 @@
-﻿## SON HANDOFF — 2026-05-15 Payment P9
+﻿## SON HANDOFF - 2026-05-15 Notification P10
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Notification modulu icin SSE endpoint'leri eklendi: `GET /api/v1/sse/ticket/{ticketId}` ve `GET /api/v1/sse/user`.
+- 4 event tipi eklendi: `seat_status_changed`, `your_turn`, `payment_confirmed`, `queue_position`.
+- Redis Pub/Sub kanal contract'lari eklendi: `seat:{ticketId}:status`, `queue:{userId}:turn`, `payment:{userId}:confirmed`.
+- `SsePublisher` Core event'lerini dinleyip Redis'e publish ediyor.
+- `QueuePositionPublisher` eklendi ve Notification testleriyle dogrulandi.
+- Booking event contract'lari moduller arasi direkt referans olmamasi icin `TicketGate.Core.Events` altina tasindi.
+- `QueueDispatcher` dogrudan Redis publish yapmayacak, `QueueTurnGranted` event'i yayinlayacak sekilde guncellendi.
+- `src/TicketGate.API/Http/sse.http` eklendi.
+
+### Dogrulama
+- RED: Notification testleri once `SseChannels`, `SsePublisher`, `QueuePositionPublisher` yok diye derlemede fail verdi.
+- GREEN: `dotnet test tests\TicketGate.Notification.Tests\TicketGate.Notification.Tests.csproj -v minimal` basarili, 3/3.
+- Regression: `dotnet test tests\TicketGate.Booking.Tests\TicketGate.Booking.Tests.csproj --filter "FullyQualifiedName~WaitingRoomTests" -v minimal` basarili, 6/6.
+- Full: `dotnet test TicketGate.sln --no-build -v minimal -m:1` basarili, 68/68.
+- Build: `dotnet build TicketGate.sln --no-restore -v minimal` basarili.
+
+### Dikkat
+- Redis Pub/Sub gecmis mesaj tutmaz; `Last-Event-ID` sadece yeni SSE id sayacini devam ettirir. Replay gerekiyorsa Redis Streams veya benzeri kalici kanal gerekir.
+- `TicketConfirmed` artik `payment_confirmed` yayinlamiyor; odeme bildiriminin kaynagi `PaymentCompleted`. Aksi halde client ayni odeme icin duplicate event alirdi.
+- Mevcut NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Siradaki Gorev
+P11 - CDC Debezium + Kafka + Elasticsearch
+
+---
+## SON HANDOFF — 2026-05-15 Payment P9
 
 ### Proje
 TicketGate — bilet satis platformu

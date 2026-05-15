@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
-using TicketGate.Booking.Domain.Events;
+using TicketGate.Core.Events;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;

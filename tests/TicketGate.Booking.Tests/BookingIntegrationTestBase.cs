@@ -36,7 +36,10 @@ public abstract class BookingIntegrationTestBase : IntegrationTestBase
         services.AddLogging();
 
         services.AddMediatR(configuration =>
-            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly));
+        {
+            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly);
+            configuration.RegisterServicesFromAssembly(typeof(BookingIntegrationTestBase).Assembly);
+        });
 
         services.AddValidatorsFromAssembly(typeof(BookingModule).Assembly, includeInternalTypes: true);
     }

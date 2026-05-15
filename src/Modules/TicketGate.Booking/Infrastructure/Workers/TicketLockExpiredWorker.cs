@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Enums;
-using TicketGate.Booking.Domain.Events;
+using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 
 namespace TicketGate.Booking.Infrastructure.Workers;

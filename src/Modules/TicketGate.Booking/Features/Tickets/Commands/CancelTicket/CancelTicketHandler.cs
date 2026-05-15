@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Domain.Enums;
-using TicketGate.Booking.Domain.Events;
+using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;

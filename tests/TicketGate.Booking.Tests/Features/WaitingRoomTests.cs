@@ -177,6 +177,50 @@ public sealed class WaitingRoomTests : BookingIntegrationTestBase
     }
 
     /// <summary>
+    /// Dispatcher bir kullaniciya sira verdikten sonra kalan kullanicilarin pozisyonunu guncelledigini dogrular.
+    /// ZPOPMIN sonrasi queue_position eventi yayinlanmazsa UI eski sira bilgisini gostermeye devam eder.
+    /// </summary>
+    [Fact]
+    public async Task Dispatcher_PublishesUpdatedPosition_ForRemainingUsers()
+    {
+        await ResetAsync();
+        var eventId = Guid.NewGuid();
+        var firstUserId = Guid.NewGuid();
+        var secondUserId = Guid.NewGuid();
+        var redis = Services.GetRequiredService<IConnectionMultiplexer>();
+        var redisDb = redis.GetDatabase();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        await redisDb.SortedSetAddAsync($"waitingroom:{eventId}", firstUserId.ToString(), now);
+        await redisDb.SortedSetAddAsync($"waitingroom:{eventId}", secondUserId.ToString(), now + 1);
+
+        var received = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var channel = new RedisChannel($"queue:{secondUserId}:turn", RedisChannel.PatternMode.Literal);
+        await redis.GetSubscriber().SubscribeAsync(channel, (_, message) => received.TrySetResult(message.ToString()));
+
+        using var dispatcher = new QueueDispatcher(
+            redis,
+            Options.Create(new BookingSettings
+            {
+                MaxCheckoutCapacity = 1,
+                QueueDispatcherIntervalSeconds = 1,
+                QueueDispatchBatchSize = 10
+            }),
+            Services.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<QueueDispatcher>.Instance);
+
+        await dispatcher.StartAsync(CancellationToken.None);
+
+        var message = await WaitForMessageAsync(received);
+        message.Should().Contain("queue_position");
+        message.Should().Contain(eventId.ToString());
+        message.Should().Contain(secondUserId.ToString());
+        message.Should().Contain("\"position\":1");
+        message.Should().Contain("\"total\":1");
+
+        await dispatcher.StopAsync(CancellationToken.None);
+    }
+
+    /// <summary>
     /// Request'i yeni DI scope icinde MediatR ile gonderir.
     /// Handler testleri production request scope davranisina yakin calisir.
     /// </summary>

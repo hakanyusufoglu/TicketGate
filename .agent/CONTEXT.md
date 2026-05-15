@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif GÃ¶rev
-P8 Refactor + P9 OutboxWorker tamamlandi. Siradaki aktif gorev P10 Notification: SSE + Redis Pub/Sub fan-out.
+P10 Notification SSE + Redis Pub/Sub fan-out tamamlandi. Siradaki aktif gorev P11 CDC Debezium + Kafka + Elasticsearch.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## SÄ±radaki Prompt
-P10 — Notification: SSE + Redis Pub/Sub fan-out
+P11 — CDC Debezium + Kafka + Elasticsearch
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -61,5 +61,8 @@ Iade akisi tamamlandi. Payment RefundPayment handler Completed payment icin refu
 
 ## Son Tamamlanan Ara Gorev
 OutboxWorker son kontrolu tamamlandi. MockPaymentGateway ayri dosyaya tasindi ve Stripe benzeri `mock_ch_{guid}` ExternalPaymentId uretiyor. Payment outbox payload record'lari worker payload klasoru altina alindi. PaymentCompleted ve PaymentFailed Booking handler integration testleri eklendi; Confirm/Release state gecisleri ve Redis lock cleanup dogrulandi. Siradaki aktif gorev P10 Notification: SSE + Redis Pub/Sub fan-out.
+
+## Son Tamamlanan Ara Gorev
+Notification P10 tamamlandi. SseEventTypes ve SseChannels contract'lari eklendi; SsePublisher TicketReserved, TicketReleased, TicketConfirmed, QueueTurnGranted, UserJoinedQueue ve PaymentCompleted event'lerini Redis Pub/Sub kanallarina yayinliyor. Ticket SSE stream'i seat_status_changed eventlerini, user SSE stream'i your_turn, queue_position ve payment_confirmed eventlerini dinliyor. Heartbeat SseSettings uzerinden okunuyor; Last-Event-ID sadece event id sayacini devam ettirir, Redis Pub/Sub gecmis mesaj replay etmez. Booking event contract'lari Core.Events altina tasindi ve QueueDispatcher dogrudan Redis publish yerine QueueTurnGranted event'i yayinlayacak sekilde guncellendi.
 
 
