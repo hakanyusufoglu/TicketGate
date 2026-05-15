@@ -22,7 +22,8 @@
 - [x] SeedGuids oluşturuldu
 - [x] http-client.env.json güncellendi
 - [x] event.http sabit Guid'lere geçirildi
-- [ ] TicketGate.Booking — P6-P7 (sıradaki)
+- [x] TicketGate.Booking — P6 Virtual Waiting Room tamamlandi
+- [x] TicketGate.Booking — P7 TicketLockExpiredWorker tamamlandi
 - [ ] TicketGate.Payment — P8-P9
 - [ ] TicketGate.Notification — P10
 - [ ] CDC Pipeline — P11
@@ -88,8 +89,8 @@
 | Check | Pre-production kontrol + summary audit + commit | 🔄 |
 | P4 | Testcontainers altyapısı | ✅ |
 | P5 | Booking — Ticket + ReserveTicket + Redis Lock | ✅ |
-| P6 | Booking — Virtual Waiting Room | ⏳ |
-| P7 | Booking — TicketLockExpiredWorker | ⏳ |
+| P6 | Booking — Virtual Waiting Room | ✅ |
+| P7 | Booking — TicketLockExpiredWorker | ✅ |
 | P8 | Payment — InitiatePayment + Outbox + Idempotency | ⏳ |
 | P9 | Payment — OutboxWorker + dead letter | ⏳ |
 | P10 | Notification — SSE + Redis fan-out | ⏳ |
@@ -141,3 +142,18 @@
 - [x] Lock dongusu tamamlandi
 - [x] Redis keyspace expired event'i ticket:{id}:lock formatinda dinleniyor
 - [x] Startup crash recovery ile suresi gecmis Reserved ticket'lar Available'a cekiliyor
+
+## 2026-05-14 Virtual Waiting Room Notu
+
+- [x] Virtual Waiting Room tamamlandi
+- [x] QueueDispatcher eklendi
+- [x] JoinQueue, LeaveQueue ve GetQueuePosition slicelari eklendi
+- [x] Redis Sorted Set sirasi ZADD NX ve ZRANK ile korunuyor
+- [x] Direct join ve dispatcher kapasite grant islemleri Lua script ile atomik hale getirildi
+- [x] QueueDispatcher Redis Pub/Sub queue:{userId}:turn kanalina your_turn mesaji yayinliyor
+- [x] waitingroom.http ve WaitingRoom integration testleri eklendi
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-14 | Queue event source id alani SourceEventId | DomainEvent zaten EventId metadata property'sine sahip; source event id icin EventId kullanmak record parametresini bosa dusuruyor ve consumer hatasina yol acar |
+| 2026-05-14 | Waiting room kapasite grant Lua ile atomik | StringGet + INCR ayri komutlar olursa es zamanli join/dispatcher istekleri MaxCheckoutCapacity asabilir |

@@ -2,7 +2,7 @@
 # Her session başında oku. Session sonunda güncelle.
 
 ## Aktif Görev
-P7 � Booking Virtual Waiting Room
+P8 � Payment
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandı. Booking modülünde
@@ -19,7 +19,7 @@ ve published Event kaydı idempotent olarak oluşturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapıldı
 
 ## Sıradaki Prompt
-P7 � Booking: Virtual Waiting Room
+P8 � Payment: InitiatePayment + Outbox + Idempotency
 
 ## Çıkarılan Promptlar (ve neden)
 - Ocelot Gateway → monolith'te gereksiz; microservice'e geçince
@@ -43,3 +43,6 @@ Magic number konfigurasyon refactor'u baslatildi. Booking Redis lock TTL, Jwt to
 ## Son Tamamlanan Ara Gorev
 TicketLockExpiredWorker tamamlandi. Redis keyspace expired event'i ticket lock anahtarlarini dinliyor, TTL dolunca Reserved ticket'i Available'a cekiyor ve startup crash recovery taramasi suresi gecmis Reserved ticket'lari temizliyor. Lock dongusu ReserveTicket ile baslayip Redis TTL expire sonrasi Postgres state cleanup ile tamamlandi.
 
+
+## Son Tamamlanan Ara Gorev
+Virtual Waiting Room tamamlandi. JoinQueue kapasite bosken active_checkout sayacini atomik Lua script ile artirip direkt gecis veriyor; kapasite doluyken Redis Sorted Set'e ZADD NX ile ekliyor ve ZRANK ile pozisyon donuyor. GetQueuePosition ve LeaveQueue slicelari eklendi. QueueDispatcher aktif waitingroom:* key'lerini tarayip kapasiteye gore ZPOPMIN + active_checkout artisini tek Lua script'inde yapiyor ve queue:{userId}:turn kanalina your_turn Pub/Sub mesaji yayinliyor.

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Features.Tickets.Endpoints;
+using TicketGate.Booking.Features.WaitingRoom.Endpoints;
 using TicketGate.Booking.Infrastructure;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Booking.Infrastructure.Workers;
@@ -21,7 +22,7 @@ namespace TicketGate.Booking;
 public sealed class BookingModule : IModule
 {
     /// <summary>
-    /// Booking DbContext, Redis connection multiplexer ve validator kayitlarini ekler.
+    /// Booking DbContext, Redis connection multiplexer, worker ve validator kayitlarini ekler.
     /// IConnectionMultiplexer TryAddSingleton ile kaydedilir; baska modul kaydettiyse duplicate connection acilmaz.
     /// </summary>
     public void RegisterServices(IServiceCollection services, IConfiguration config)
@@ -44,6 +45,7 @@ public sealed class BookingModule : IModule
         services.Configure<BookingSettings>(config.GetSection(BookingSettings.SectionName));
 
         services.AddHostedService<TicketLockExpiredWorker>();
+        services.AddHostedService<QueueDispatcher>();
 
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }
@@ -55,5 +57,6 @@ public sealed class BookingModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         app.MapTicketEndpoints();
+        app.MapWaitingRoomEndpoints();
     }
 }

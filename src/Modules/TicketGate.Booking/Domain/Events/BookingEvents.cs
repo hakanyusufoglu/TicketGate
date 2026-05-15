@@ -31,3 +31,21 @@ public sealed record TicketCancelled(
     Guid TicketId,
     Guid SourceEventId,
     Guid UserId) : DomainEvent;
+
+/// <summary>
+/// Kullanicinin waiting room sirasi geldiginde yayinlanan event.
+/// QueueDispatcher tarafindan publish edilir; Notification modulu SSE ile iletir.
+/// </summary>
+public sealed record QueueTurnGranted(
+    Guid SourceEventId,
+    Guid UserId,
+    long Position) : DomainEvent;
+
+/// <summary>
+/// Kullanici waiting room kuyruguna katildiginda yayinlanan event.
+/// Pozisyon bilgisi Notification veya analitik tarafinda kullanilabilir.
+/// </summary>
+public sealed record UserJoinedQueue(
+    Guid SourceEventId,
+    Guid UserId,
+    long Position) : DomainEvent;

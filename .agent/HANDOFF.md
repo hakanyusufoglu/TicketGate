@@ -1,4 +1,34 @@
-## SON HANDOFF — 2026-05-14 TicketLockExpiredWorker
+## SON HANDOFF — 2026-05-14 Virtual Waiting Room
+
+### Proje
+TicketGate — bilet satis platformu
+.NET 10 · Moduler Monolith · Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Virtual Waiting Room slicelari eklendi: JoinQueue, GetQueuePosition, LeaveQueue.
+- JoinQueue kapasite bosken active_checkout:{eventId} sayacini Lua script ile atomik artirip Position=0 direct grant donuyor.
+- Kapasite doluyken waitingroom:{eventId} Sorted Set'ine ZADD NX ile ekliyor; ayni kullanicinin pozisyonu korunuyor.
+- QueueDispatcher eklendi ve BookingModule icinde hosted service olarak kaydedildi.
+- Dispatcher waitingroom:* key'lerini tarayip Lua script ile kapasiteye gore ZPOPMIN + active_checkout INCR islemini atomik yapiyor.
+- Redis Pub/Sub queue:{userId}:turn kanalina your_turn payload'i yayinlaniyor; SSE P10'da bu kanali dinleyecek.
+- QueueTurnGranted ve UserJoinedQueue domain eventleri eklendi; source event id alani DomainEvent.EventId ile cakismamasi icin SourceEventId kullanildi.
+- src/TicketGate.API/Http/waitingroom.http eklendi.
+- WaitingRoom integration testleri eklendi; real Redis Sorted Set, NX, Pub/Sub ve concurrency kapasite davranisi dogrulandi.
+
+### Dogrulama
+- dotnet build TicketGate.sln --no-restore -v minimal: basarili, mevcut NuGet guvenlik uyarilari devam ediyor.
+- dotnet test tests/TicketGate.Booking.Tests/TicketGate.Booking.Tests.csproj --no-build -v normal: 21/21 basarili.
+- Bir onceki tum test kosusunda Docker/Testcontainers initialize timeout flake'i goruldu; ayni test izole ve sonraki tam kosuda gecti.
+
+### Dikkat
+- Commit atilmadi; kullanici son talimatta commit istemedi.
+- active_checkout:{eventId} sayacini odeme/checkout tamamlaninca azaltacak akis P8/P9 tarafinda netlestirilmeli. Aksi halde kapasite kalici dolu kalir.
+- Redis server.Keys waitingroom:* taramasi mevcut faz icin kabul edilebilir; production yuksek trafik icin aktif event set'i veya SCAN temelli explicit registry daha saglam olur.
+
+### Siradaki Gorev
+P8 — Payment: InitiatePayment + Outbox + Idempotency
+
+---## SON HANDOFF — 2026-05-14 TicketLockExpiredWorker
 
 ### Proje
 TicketGate — bilet satis platformu
