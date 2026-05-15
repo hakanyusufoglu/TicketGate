@@ -5,6 +5,7 @@ using TicketGate.Core.Results;
 using TicketGate.Payment.Domain.Enums;
 using TicketGate.Payment.Infrastructure.Outbox;
 using TicketGate.Payment.Infrastructure.Persistence;
+using TicketGate.Payment.Infrastructure.Workers.Payloads;
 
 namespace TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 

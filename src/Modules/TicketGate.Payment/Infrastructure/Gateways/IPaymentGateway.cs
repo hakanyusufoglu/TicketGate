@@ -28,28 +28,3 @@ public sealed record PaymentRequest(
     decimal Amount,
     string Currency,
     string Provider);
-
-/// <summary>
-/// Test ve gelistirme ortami icin sahte gateway.
-/// Her istekte basarili sonuc doner; gercek odeme yapilmaz.
-/// </summary>
-public sealed class MockPaymentGateway : IPaymentGateway
-{
-    /// <summary>
-    /// Sahte basarili odeme yapar.
-    /// ExternalPaymentId olarak rastgele Guid doner.
-    /// </summary>
-    public Task<Result<string>> ChargeAsync(PaymentRequest request, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(Result<string>.Ok(Guid.NewGuid().ToString()));
-    }
-
-    /// <summary>
-    /// Sahte basarili iade sonucu doner.
-    /// Harici servis cagrisi yapmadan development akisini tamamlar.
-    /// </summary>
-    public Task<Result> RefundAsync(string externalPaymentId, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(Result.Ok());
-    }
-}

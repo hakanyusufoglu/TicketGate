@@ -7,6 +7,7 @@ using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
 using TicketGate.Payment.Infrastructure.Outbox;
 using TicketGate.Payment.Infrastructure.Persistence;
+using TicketGate.Payment.Infrastructure.Workers.Payloads;
 using PaymentEntity = TicketGate.Payment.Domain.Entities.Payment;
 
 namespace TicketGate.Payment.Features.Payments.Commands.InitiatePayment;

@@ -225,3 +225,12 @@
 |-------|-------|---------|
 | 2026-05-15 | Refund icin ayri ReleaseAfterRefund metodu | Release() TTL/payment failure icin Reserved -> Available akisini temsil ediyor; refund Confirmed -> Available oldugu icin state gecisini ayirmak daha okunabilir ve test edilebilir |
 | 2026-05-15 | Wrong user refund 401 | Baska kullanicinin odemesini iade etmeye calismak is kuralindan cok authorization ihlalidir; 409 bu durum icin zayif semantik olur |
+
+## 2026-05-15 OutboxWorker Son Kontrol Notu
+
+- [x] OutboxWorker tamamlandi
+- [x] MockPaymentGateway Stripe simulasyonu ayri dosyaya tasindi ve `mock_ch_{guid}` formatinda ExternalPaymentId uretiyor
+- [x] PaymentInitiated/Refund payload record'lari worker payload klasoru altina tasindi
+- [x] PaymentCompleted/Failed handler Booking'e testleriyle eklendi; Redis lock temizligi dogrulandi
+- [x] Tam odeme dongusu calisiyor: Reserve -> Initiate -> Worker -> Complete -> Confirm
+- [x] Tam iade dongusu calisiyor: Refund -> Worker -> Refunded -> Available

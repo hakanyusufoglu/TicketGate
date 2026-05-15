@@ -5,11 +5,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using TicketGate.Payment.Configuration;
 using TicketGate.Payment.Domain.Enums;
-using TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
-using TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 using TicketGate.Payment.Infrastructure.Outbox;
 using TicketGate.Payment.Infrastructure.Persistence;
 using TicketGate.Payment.Infrastructure.Workers;
+using TicketGate.Payment.Infrastructure.Workers.Payloads;
 using PaymentEntity = TicketGate.Payment.Domain.Entities.Payment;
 
 namespace TicketGate.Payment.Tests.Features;

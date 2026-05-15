@@ -7,11 +7,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TicketGate.Core.Events;
 using TicketGate.Payment.Configuration;
-using TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
-using TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 using TicketGate.Payment.Infrastructure.Gateways;
 using TicketGate.Payment.Infrastructure.Outbox;
 using TicketGate.Payment.Infrastructure.Persistence;
+using TicketGate.Payment.Infrastructure.Workers.Payloads;
 
 namespace TicketGate.Payment.Infrastructure.Workers;
 

@@ -59,4 +59,7 @@ Endpoint security refactor tamamlandi. Booking reserve/confirm/cancel, WaitingRo
 ## Son Tamamlanan Ara Gorev
 Iade akisi tamamlandi. Payment RefundPayment handler Completed payment icin refund outbox mesaji yaziyor, OutboxWorker refund gateway sonucunda Payment'i Refunded yapip PaymentRefunded event'i yayinliyor. Booking PaymentRefundedHandler bu event'i dinleyerek Confirmed ticket'i ReleaseAfterRefund() ile Available durumuna cekiyor ve TicketReleased event'i yayinliyor. CancelTicket organizator/admin iptali olarak Confirmed -> Cancelled kalir; Refund kullanici iade talebi olarak Confirmed -> Available yapar ve bilet tekrar satisa acilir.
 
+## Son Tamamlanan Ara Gorev
+OutboxWorker son kontrolu tamamlandi. MockPaymentGateway ayri dosyaya tasindi ve Stripe benzeri `mock_ch_{guid}` ExternalPaymentId uretiyor. Payment outbox payload record'lari worker payload klasoru altina alindi. PaymentCompleted ve PaymentFailed Booking handler integration testleri eklendi; Confirm/Release state gecisleri ve Redis lock cleanup dogrulandi. Siradaki aktif gorev P10 Notification: SSE + Redis Pub/Sub fan-out.
+
 
