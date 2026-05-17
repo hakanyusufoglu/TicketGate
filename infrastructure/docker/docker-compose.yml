@@ -51,7 +51,9 @@ services:
       - kafka_data:/var/lib/kafka/data
 
   debezium:
-    image: debezium/connect:2.6
+    build:
+      context: ../debezium
+    image: ticketgate/debezium-connect-elasticsearch:2.6
     depends_on:
       - kafka
       - postgres

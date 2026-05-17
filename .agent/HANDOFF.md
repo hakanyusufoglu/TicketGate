@@ -424,3 +424,42 @@ TicketGate — bilet satis platformu
 P10 — Notification SSE + Redis Pub/Sub fan-out
 
 ---
+## SON HANDOFF - 2026-05-17 CDC P11
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- `infrastructure/debezium/Dockerfile` eklendi; Debezium Connect imajina Confluent Elasticsearch sink plugin'i kopyalaniyor.
+- `docker-compose.yml` Debezium service'i custom image build edecek sekilde guncellendi.
+- Debezium Postgres connector `topic.prefix=db`, `publication.name=ticketgate_pub`, `booking.tickets` ve `payment.payments` scope'u ile guncellendi.
+- `decimal.handling.mode=double` eklendi; numeric alanlar Elasticsearch float mapping'iyle uyumlu JSON number olarak akiyor.
+- Elasticsearch index template `infrastructure/elasticsearch/index-template.json` olarak guncellendi.
+- Elasticsearch sink connector config eklendi; TimestampRouter ile `ticketgate-db.booking.tickets-2026.05` ve `ticketgate-db.payment.payments-2026.05` indexleri uretiliyor.
+- TicketGate.API'ye Serilog paketleri, Elasticsearch sink konfigu, Development console sink ve Correlation ID middleware eklendi.
+- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` P11 tamamlandi / P12 Prometheus + Grafana olacak sekilde guncellendi.
+
+### Dogrulama
+- `docker compose -f infrastructure/docker/docker-compose.yml up -d --build`: custom Debezium Connect imaji build edildi ve servisler calisti.
+- PostgreSQL `SHOW wal_level;` sonucu `logical`; `pg_publication` icinde `ticketgate_pub` var.
+- Connect plugin listesinde `io.confluent.connect.elasticsearch.ElasticsearchSinkConnector` goruldu.
+- Debezium source connector status: connector RUNNING, task RUNNING.
+- Elasticsearch sink connector status: connector RUNNING, task RUNNING.
+- Kafka topicleri olustu: `db.booking.tickets`, `db.payment.payments`.
+- Kafka booking payload'inda `price` JSON number olarak geldi: `150.0`.
+- Elasticsearch aramasi `ticketgate-db.booking.tickets-*` icin 50 dokuman dondurdu.
+- Kibana `ticketgate-*`, `ticketgate-db.booking.tickets-*`, `ticketgate-db.payment.payments-*` ve `ticketgate-logs-*` data view kayitlari API ile olusturuldu.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, mevcut NuGet/security ve preview SDK uyarilari devam ediyor.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili, 68/68.
+
+### Dikkat
+- `debezium/connect:2.6` tek basina Elasticsearch sink sinifini icermedigi icin custom image zorunlu.
+- Eski topic kayitlarinda decimal alanlar base64 string oldugu icin local connector offsetleri resetlenip topicler yeniden olusturuldu.
+- Docker Compose proje adi klasorden geldigi icin container isimleri `docker-postgres-1` gibi gorunuyor; servis komutlarinda `docker compose exec postgres ...` kullanmak daha saglam.
+- Kibana dashboard panel yerlesimi UI uzerinden manuel olarak tamamlanmadi; data view'lar hazir oldugu icin Discover ve Dashboard tarafinda kullanilabilir.
+
+### Siradaki Gorev
+P12 — Prometheus + Grafana
+
+---

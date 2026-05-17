@@ -31,7 +31,13 @@
 - [x] Ticket Confirmed -> Available donusumu calisiyor
 - [x] CancelTicket vs Refund ayrimi netlesti
 - [x] TicketGate.Notification — P10
-- [ ] CDC Pipeline — P11
+- [x] CDC Pipeline — P11
+- [x] CDC pipeline aktif
+- [x] Debezium connector çalışıyor
+- [x] Kafka topics oluştu
+- [x] Elasticsearch index template
+- [x] Serilog + Elasticsearch entegrasyonu
+- [x] Correlation ID middleware
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -99,7 +105,7 @@
 | P8 | Payment — InitiatePayment + Outbox + Idempotency | ✅ |
 | P9 | Payment — OutboxWorker + dead letter | ✅ |
 | P10 | Notification — SSE + Redis fan-out | ✅ |
-| P11 | CDC — Debezium + Kafka + Elasticsearch | ⏳ |
+| P11 | CDC — Debezium + Kafka + Elasticsearch | ✅ |
 | P12 | Seed data + Migration stratejisi | 🔄 |
 | P13 | Prometheus + Grafana | ⏳ |
 | P14 | Docker Compose production (Health Checks dahil) | ⏳ |
@@ -249,3 +255,19 @@
 |-------|-------|---------|
 | 2026-05-15 | Booking event contract'lari Core'a tasindi | Notification modulu Booking projesine direkt referans veremez; event contract'i shared kernel sinirinda tutuldu |
 | 2026-05-15 | TicketConfirmed payment_confirmed yayinlamiyor | PaymentCompleted zaten payment_confirmed kaynagi; iki event'ten ayni bildirim uretmek client'a duplicate mesaj gonderirdi |
+
+## 2026-05-17 CDC P11 Notu
+
+- [x] CDC pipeline aktif hale getirildi.
+- [x] Debezium Postgres connector `booking.tickets` ve `payment.payments` tablolarini `db.booking.tickets` ve `db.payment.payments` topic'lerine yaziyor.
+- [x] Outbox schema CDC scope disinda birakildi; `ticketgate_pub` yalnizca booking ve payment schema tablolarini kapsiyor.
+- [x] Debezium connector `decimal.handling.mode=double` ile numeric alanlari Elasticsearch float mapping'iyle uyumlu uretiyor.
+- [x] Elasticsearch sink connector ayni Debezium Connect imajina Confluent Elasticsearch plugin'i eklenerek calistirildi.
+- [x] `ticketgate-*` index template'i kaydedildi; `ticketgate-db.booking.tickets-2026.05` ve `ticketgate-db.payment.payments-2026.05` indexleri olustu.
+- [x] TicketGate.API Serilog + Elasticsearch sink + Correlation ID middleware ile guncellendi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-17 | Debezium Connect imajina Elasticsearch sink plugin'i eklendi | `debezium/connect:2.6` Postgres CDC plugin'lerini tasiyor ama Confluent Elasticsearch sink sinifini icermiyor |
+| 2026-05-17 | Sink index adi TimestampRouter ile ay bazli yapiliyor | Confluent Elasticsearch sink index adini topic'ten aliyor; resmi SMT yaklasimi date suffix icin `TimestampRouter` kullaniyor |
+| 2026-05-17 | Debezium decimal handling double yapildi | Schemaless JSON'da decimal bytes base64 string'e donusuyordu ve Elasticsearch float mapping'i bulk insert'i reddediyordu |

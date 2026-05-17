@@ -1,9 +1,44 @@
+using Serilog;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.Elasticsearch;
+using TicketGate.API.Middleware;
 using TicketGate.API.Seed;
 using TicketGate.Core.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+/// <summary>
+/// Serilog yapılandırması. Development'ta Console + Elasticsearch,
+/// Production'da yalnızca Elasticsearch kullanılır.
+/// Her log satırına CorrelationId otomatik eklenir.
+/// Hassas veri loglarda kesinlikle yer almaz.
+/// </summary>
+var loggerConfiguration = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithCorrelationId();
+
+if (builder.Environment.IsDevelopment())
+{
+    loggerConfiguration.WriteTo.Console(new RenderedCompactJsonFormatter());
+}
+
+Log.Logger = loggerConfiguration
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(
+        new Uri(builder.Configuration["Elasticsearch:Uri"] ?? "http://localhost:9200"))
+    {
+        IndexFormat = "ticketgate-logs-{0:yyyy.MM}",
+        AutoRegisterTemplate = true,
+        NumberOfReplicas = 0,
+        NumberOfShards = 1
+    })
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 builder.Services.AddModules(builder.Configuration);
 var app = builder.Build();
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.MapModules();
 
 /// <summary>

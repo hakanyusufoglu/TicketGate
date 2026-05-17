@@ -1,0 +1,24 @@
+{
+  "name": "ticketgate-elasticsearch-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "db.booking.tickets,db.payment.payments",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "_doc",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "behavior.on.null.values": "delete",
+    "flush.synchronously": "true",
+    "transforms": "addTimestamp,routeByMonth",
+    "transforms.addTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.addTimestamp.timestamp.field": "@timestamp",
+    "transforms.routeByMonth.type": "org.apache.kafka.connect.transforms.TimestampRouter",
+    "transforms.routeByMonth.topic.format": "ticketgate-${topic}-${timestamp}",
+    "transforms.routeByMonth.timestamp.format": "yyyy.MM"
+  }
+}

@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif GÃ¶rev
-P10 Notification SSE + Redis Pub/Sub fan-out tamamlandi. Siradaki aktif gorev P11 CDC Debezium + Kafka + Elasticsearch.
+P11 CDC Debezium + Kafka + Elasticsearch tamamlandi. Aktif görev: P12 — Prometheus + Grafana.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## SÄ±radaki Prompt
-P11 — CDC Debezium + Kafka + Elasticsearch
+P12 — Prometheus + Grafana
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -64,5 +64,8 @@ OutboxWorker son kontrolu tamamlandi. MockPaymentGateway ayri dosyaya tasindi ve
 
 ## Son Tamamlanan Ara Gorev
 Notification P10 tamamlandi. SseEventTypes ve SseChannels contract'lari eklendi; SsePublisher TicketReserved, TicketReleased, TicketConfirmed, QueueTurnGranted, UserJoinedQueue ve PaymentCompleted event'lerini Redis Pub/Sub kanallarina yayinliyor. Ticket SSE stream'i seat_status_changed eventlerini, user SSE stream'i your_turn, queue_position ve payment_confirmed eventlerini dinliyor. Heartbeat SseSettings uzerinden okunuyor; Last-Event-ID sadece event id sayacini devam ettirir, Redis Pub/Sub gecmis mesaj replay etmez. Booking event contract'lari Core.Events altina tasindi ve QueueDispatcher dogrudan Redis publish yerine QueueTurnGranted event'i yayinlayacak sekilde guncellendi.
+
+## Son Tamamlanan Ara Gorev
+CDC P11 tamamlandi. Docker Compose tum servisleri calistiriyor; Debezium Connect imaji Elasticsearch sink plugin'i ile build ediliyor. Postgres `wal_level=logical`, `ticketgate_pub` publication'i booking/payment schema tablolarini kapsiyor ve outbox CDC disinda kaldi. Debezium source connector `db.booking.tickets` ve `db.payment.payments` topic'lerini uretiyor; sink connector TimestampRouter ile `ticketgate-db.*-yyyy.MM` indexlerine yaziyor. Serilog + Elasticsearch sink ve CorrelationId middleware TicketGate.API'ye eklendi.
 
 
