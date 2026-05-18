@@ -32,6 +32,24 @@ public static class TicketGateMetrics
             "Aktif Redis ticket lock sayisi");
 
     /// <summary>
+    /// Aktif Redis lock sayisini bir artirir.
+    /// Rezervasyon basarili oldugunda uygulama icindeki gauge degeri bu metodla guncellenir.
+    /// </summary>
+    public static void IncrementActiveLocks()
+    {
+        ActiveLocks.Inc();
+    }
+
+    /// <summary>
+    /// Aktif Redis lock sayisini negatif deger uretmeden azaltir.
+    /// API restart sonrasi gauge sifirlanabilir; Redis'teki eski lock temizlenirken Dec() dogrudan cagrilirsa -1 gorunur.
+    /// </summary>
+    public static void DecrementActiveLocks()
+    {
+        ActiveLocks.Set(Math.Max(0, ActiveLocks.Value - 1));
+    }
+
+    /// <summary>
     /// Waiting room kuyruk derinligini eventId label'i ile izler.
     /// Yuksek degerler kapasite yetersizligi veya dispatcher yavasligi icin erken uyaridir.
     /// </summary>

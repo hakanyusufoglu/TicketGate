@@ -21,4 +21,14 @@ public sealed class TicketGateMetricsTests
         collectedMetrics.Should().Contain("ticketgate_ticket_reservations_total");
         collectedMetrics.Should().Contain("status=\"success\"");
     }
+
+    [Fact]
+    public void Active_lock_metric_does_not_go_below_zero()
+    {
+        TicketGateMetrics.ActiveLocks.Set(0);
+
+        TicketGateMetrics.DecrementActiveLocks();
+
+        TicketGateMetrics.ActiveLocks.Value.Should().Be(0);
+    }
 }

@@ -2,7 +2,7 @@ groups:
   - name: ticketgate
     rules:
       - alert: HighErrorRate
-        expr: rate(http_requests_total{code=~"5.."}[5m]) > 0.01
+        expr: sum(rate(http_requests_received_total{code=~"5.."}[5m])) > 0.01
         for: 2m
         labels:
           severity: critical
@@ -26,7 +26,7 @@ groups:
           summary: "Waiting room derinligi yuksek"
 
       - alert: SlowOutboxProcessing
-        expr: histogram_quantile(0.99, rate(ticketgate_outbox_processing_duration_seconds_bucket[5m])) > 5
+        expr: histogram_quantile(0.99, sum by (le) (rate(ticketgate_outbox_processing_duration_seconds_bucket[5m]))) > 5
         for: 5m
         labels:
           severity: warning

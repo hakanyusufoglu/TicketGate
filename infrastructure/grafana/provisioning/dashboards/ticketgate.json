@@ -41,7 +41,7 @@
             "showPoints": "never",
             "spanNulls": false
           },
-          "unit": "reqps"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -66,12 +66,12 @@
       },
       "targets": [
         {
-          "expr": "rate(http_requests_total[5m])",
-          "legendFormat": "{{method}} {{code}}",
+          "expr": "sum by (method, code, endpoint) (http_requests_received_total)",
+          "legendFormat": "{{method}} {{code}} {{endpoint}}",
           "refId": "A"
         }
       ],
-      "title": "Istek Hizi (req/sn)",
+      "title": "Toplam Istek Sayisi",
       "type": "timeseries"
     },
     {
@@ -97,7 +97,7 @@
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -122,12 +122,12 @@
       },
       "targets": [
         {
-          "expr": "rate(http_requests_total{code=~\"5..\"}[5m])",
-          "legendFormat": "{{method}} {{code}}",
+          "expr": "sum by (method, code, endpoint) (http_requests_received_total{code=~\"5..\"}) or vector(0)",
+          "legendFormat": "{{method}} {{code}} {{endpoint}}",
           "refId": "A"
         }
       ],
-      "title": "Hata Orani (5xx)",
+      "title": "Toplam 5xx Hata Sayisi",
       "type": "timeseries"
     },
     {
@@ -260,7 +260,7 @@
       },
       "targets": [
         {
-          "expr": "ticketgate_waiting_room_depth",
+          "expr": "ticketgate_waiting_room_depth or vector(0)",
           "legendFormat": "{{eventId}}",
           "refId": "A"
         }
@@ -316,7 +316,7 @@
       },
       "targets": [
         {
-          "expr": "ticketgate_outbox_dead_letters_total",
+          "expr": "ticketgate_outbox_dead_letters_total or vector(0)",
           "legendFormat": "{{type}}",
           "refId": "A"
         }
@@ -359,7 +359,7 @@
       },
       "targets": [
         {
-          "expr": "ticketgate_payments_total",
+          "expr": "ticketgate_payments_total or vector(0)",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -458,12 +458,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, rate(ticketgate_outbox_processing_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.99, sum by (le) (increase(ticketgate_outbox_processing_duration_seconds_bucket[1h])))",
           "legendFormat": "p99",
           "refId": "A"
         }
       ],
-      "title": "Outbox Isleme Suresi p99",
+      "title": "Outbox Isleme Suresi p99 (son 1 saat)",
       "type": "timeseries"
     }
   ],

@@ -74,7 +74,7 @@ internal sealed class ReserveTicketHandler(
                 cancellationToken);
 
             TicketGateMetrics.TicketReservations.WithLabels("success").Inc();
-            TicketGateMetrics.ActiveLocks.Inc();
+            TicketGateMetrics.IncrementActiveLocks();
 
             return Result<ReserveTicketResponse>.Ok(new ReserveTicketResponse(
                 ticket.Id,

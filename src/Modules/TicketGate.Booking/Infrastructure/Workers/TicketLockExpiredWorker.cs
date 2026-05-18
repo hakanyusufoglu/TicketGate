@@ -122,7 +122,7 @@ public sealed class TicketLockExpiredWorker(
             var lockedByUserId = ticket.LockedByUserId;
             ticket.Release();
             await db.SaveChangesAsync(cancellationToken);
-            TicketGateMetrics.ActiveLocks.Dec();
+            TicketGateMetrics.DecrementActiveLocks();
 
             await publisher.Publish(
                 new TicketReleased(ticket.Id, ticket.EventId, lockedByUserId),

@@ -30,6 +30,8 @@ internal sealed class JoinQueueHandler(
 
         if (await TryGrantDirectCheckoutAsync(db, request.EventId, cancellationToken))
         {
+            TicketGateMetrics.WaitingRoomDepth.WithLabels(request.EventId.ToString()).Set(0);
+
             return Result<JoinQueueResponse>.Ok(new JoinQueueResponse(
                 request.EventId,
                 request.UserId,

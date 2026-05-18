@@ -9,16 +9,6 @@ scrape_configs:
   - job_name: ticketgate-api
     static_configs:
       - targets:
-          - ticketgate-api:5001
+          - host.docker.internal:5123
     metrics_path: /metrics
     scrape_interval: 10s
-
-  - job_name: kafka
-    static_configs:
-      - targets:
-          - kafka:9092
-
-  - job_name: postgres
-    static_configs:
-      - targets:
-          - postgres:5432

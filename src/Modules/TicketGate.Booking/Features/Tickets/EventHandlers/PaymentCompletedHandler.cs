@@ -37,7 +37,7 @@ public sealed class PaymentCompletedHandler(
 
         if (await redis.GetDatabase().KeyDeleteAsync(ToLockKey(notification.TicketId)))
         {
-            TicketGateMetrics.ActiveLocks.Dec();
+            TicketGateMetrics.DecrementActiveLocks();
         }
 
         await publisher.Publish(
