@@ -1,4 +1,4 @@
-# CI main branch'te basariyla tamamlandiginda calisir.
+# CI master branch'te basariyla tamamlandiginda calisir.
 # Docker image build/push, migration apply, deploy ve smoke test adimlarini yurutur.
 name: CD
 
@@ -6,7 +6,7 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
