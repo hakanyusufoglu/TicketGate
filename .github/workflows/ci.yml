@@ -90,19 +90,23 @@ jobs:
             --project src/Modules/TicketGate.Identity \
             --startup-project src/TicketGate.API \
             --context IdentityDbContext \
+            --configuration Release \
             --no-build
           dotnet ef migrations list \
             --project src/Modules/TicketGate.Event \
             --startup-project src/TicketGate.API \
             --context EventDbContext \
+            --configuration Release \
             --no-build
           dotnet ef migrations list \
             --project src/Modules/TicketGate.Booking \
             --startup-project src/TicketGate.API \
             --context BookingDbContext \
+            --configuration Release \
             --no-build
           dotnet ef migrations list \
             --project src/Modules/TicketGate.Payment \
             --startup-project src/TicketGate.API \
             --context PaymentDbContext \
+            --configuration Release \
             --no-build
