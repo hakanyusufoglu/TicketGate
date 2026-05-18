@@ -41,6 +41,11 @@
 - [x] Prometheus + Grafana tamamlandi
 - [x] Ozel metrikler eklendi
 - [x] Alert rules tanimlandi
+- [x] Docker Compose production konfigürasyonu
+- [x] Health checks eklendi
+- [x] Dockerfile oluşturuldu
+- [x] .env.example oluşturuldu
+- [x] Migration script eklendi
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -111,7 +116,7 @@
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ✅ |
 | P12 | Seed data + Migration stratejisi | 🔄 |
 | P13 | Prometheus + Grafana | ✅ |
-| P14 | Docker Compose production (Health Checks dahil) | ⏳ |
+| P14 | Docker Compose production (Health Checks dahil) | ✅ |
 | P15 | CI/CD — GitHub Actions | ⏳ |
 | P16 | Environment yönetimi + Secrets | ⏳ |
 | P17 | Security hardening + Built-in RateLimiter | ⏳ |
@@ -287,3 +292,17 @@
 | Tarih | Karar | Gerekce |
 |-------|-------|---------|
 | 2026-05-18 | TicketGateMetrics Core altinda tutuldu | Prompt API altina koysa da Booking/Payment/Notification modulleri API'ye referans veremez; shared kernel moduler monolith sinirini bozmadan ortak metrik sozlesmesi saglar |
+
+## 2026-05-18 Docker Compose Production Notu
+
+- [x] `infrastructure/docker/docker-compose.yml` base servis tanimlarina ayrildi; API container portu 5001 ic networkte expose ediliyor.
+- [x] `infrastructure/docker/docker-compose.override.yml` development port publish ve local secret degerleri icin olusturuldu; `.gitignore` ile git disinda tutuluyor.
+- [x] `infrastructure/docker/docker-compose.prod.yml` restart policy, resource limits ve healthcheck katmani olarak eklendi.
+- [x] TicketGate.API icin `/health/live`, `/health/ready` ve `/health` endpointleri eklendi; readiness PostgreSQL, Redis, Kafka ve Elasticsearch kontrollerini kapsiyor.
+- [x] API Dockerfile multi-stage publish + runtime curl kurulumu ile production healthcheck'e hazirlandi.
+- [x] `.env.example` ve `infrastructure/scripts/migrate.sh` eklendi; production migration stratejisi CI/CD script'i uzerinden tutuluyor.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-18 | Development override git disinda tutuldu | Lokal portlar ve development secret degerleri repo'ya production konfigu gibi commit edilmemeli; base/prod dosyalari deploy sozlesmesini tasir |
+| 2026-05-18 | Health checks API projesinde extension olarak tutuldu | Endpointler host seviyesinde davranis oldugu icin module boundary bozmaz; Docker Compose ve izleme araclari ayni endpointleri kullanabilir |

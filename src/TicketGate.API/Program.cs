@@ -2,6 +2,7 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Elasticsearch;
 using Prometheus;
+using TicketGate.API.Extensions;
 using TicketGate.API.Middleware;
 using TicketGate.API.Seed;
 using TicketGate.Core.Extensions;
@@ -37,6 +38,7 @@ Log.Logger = loggerConfiguration
 
 builder.Host.UseSerilog();
 
+builder.Services.AddTicketGateHealthChecks(builder.Configuration);
 builder.Services.AddModules(builder.Configuration);
 var app = builder.Build();
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -48,6 +50,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseHttpMetrics();
 
 app.MapModules();
+app.MapTicketGateHealthChecks();
 
 /// <summary>
 /// Prometheus metrik endpoint'i. /metrics path'inde tum uygulama metriklerini Prometheus formatinda sunar.

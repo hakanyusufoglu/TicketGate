@@ -1,8 +1,8 @@
 ﻿# CONTEXT.md â€” Aktif Session Durumu
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
-## Aktif GÃ¶rev
-Prometheus + Grafana tamamlandi. Aktif görev: P13 — Docker Compose Production.
+## Aktif Görev
+Docker Compose Production tamamlandi. Aktif görev: P14 — CI/CD GitHub Actions.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -18,8 +18,8 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] Booking integration smoke testleri gerÃ§ek PostgreSQL/Redis ile geÃ§ti
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
-## SÄ±radaki Prompt
-P13 — Docker Compose Production
+## Sıradaki Prompt
+P14 — CI/CD GitHub Actions
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -70,5 +70,8 @@ CDC P11 tamamlandi. Docker Compose tum servisleri calistiriyor; Debezium Connect
 
 ## Son Tamamlanan Ara Gorev
 Prometheus + Grafana tamamlandi. TicketGate.API `UseHttpMetrics()` ve `MapMetrics()` ile `/metrics` endpoint'i sunuyor. `TicketGateMetrics` shared kernel altinda tutuldu; Booking rezervasyon/lock/waiting room, Payment outbox/payment/dead-letter ve Notification SSE baglanti metriklerini Prometheus'a yaziyor. Prometheus scrape config, alert rules, Grafana datasource/dashboard provisioning ve 9 panelli TicketGate dashboard eklendi. Docker Compose Prometheus ve Grafana servisleriyle guncellendi.
+
+## Son Tamamlanan Ara Gorev
+Docker Compose Production tamamlandi. `infrastructure/docker/docker-compose.yml` base servis tanimlarina ayrildi, `docker-compose.prod.yml` restart/resource/healthcheck katmani olarak eklendi ve `docker-compose.override.yml` development portlari icin olusturulup git disinda tutuldu. TicketGate.API `/health/live`, `/health/ready` ve `/health` endpointlerini sunuyor; readiness PostgreSQL, Redis, Kafka ve Elasticsearch kontrollerini kapsiyor. API Dockerfile curl destekli runtime image'a guncellendi, `.env.example` ve `infrastructure/scripts/migrate.sh` eklendi. Commit atilmadi.
 
 

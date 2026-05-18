@@ -1,22 +1,54 @@
+# Base Docker Compose configuration.
+# Ortak servis tanimlari burada tutulur; ortam farklari override dosyalarindan gelir.
+# Base dosyada host port publish edilmez, API dis trafik icin gateway/edge katmanina hazir kalir.
+# Production secret degerleri `.env` dosyasindan okunur; `.env.example` sadece sablondur.
+
 services:
+  ticketgate-api:
+    # API container ic networkte 5001 dinler. Development host portu override dosyasinda 5123'e publish edilir.
+    build:
+      context: ../..
+      dockerfile: src/TicketGate.API/Dockerfile
+    image: ticketgate/api:latest
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - elasticsearch
+    environment:
+      ConnectionStrings__Booking: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-ticketgate};Username=${POSTGRES_USER:-ticketgate};Password=${POSTGRES_PASSWORD:-CHANGE_ME};Search Path=booking"
+      ConnectionStrings__Payment: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-ticketgate};Username=${POSTGRES_USER:-ticketgate};Password=${POSTGRES_PASSWORD:-CHANGE_ME};Search Path=payment"
+      ConnectionStrings__Event: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-ticketgate};Username=${POSTGRES_USER:-ticketgate};Password=${POSTGRES_PASSWORD:-CHANGE_ME};Search Path=events"
+      ConnectionStrings__Identity: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-ticketgate};Username=${POSTGRES_USER:-ticketgate};Password=${POSTGRES_PASSWORD:-CHANGE_ME};Search Path=identity"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD:-CHANGE_ME}"
+      Kafka__BootstrapServers: kafka:9092
+      Elasticsearch__Uri: http://elasticsearch:9200
+      Jwt__Issuer: ${JWT_ISSUER:-ticketgate}
+      Jwt__Audience: ${JWT_AUDIENCE:-TicketGate.Clients}
+      Jwt__SecretKey: ${JWT_SECRET_KEY:-CHANGE_ME_MIN_32_CHARS}
+      BookingSettings__LockTtlSeconds: ${BOOKING_LOCK_TTL_SECONDS:-600}
+      BookingSettings__MaxCheckoutCapacity: ${BOOKING_MAX_CHECKOUT_CAPACITY:-10}
+    expose:
+      - "5001"
+
   postgres:
+    # Debezium CDC icin logical WAL ve replication slot ayarlari base tanimda kalir.
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ticketgate
-      POSTGRES_USER: ticketgate
-      POSTGRES_PASSWORD: ticketgate
+      POSTGRES_DB: ${POSTGRES_DB:-ticketgate}
+      POSTGRES_USER: ${POSTGRES_USER:-ticketgate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CHANGE_ME}
     command: postgres -c wal_level=logical -c max_replication_slots=5 -c max_wal_senders=5
-    ports:
-      - "55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   redis:
+    # Keyspace notification Booking ticket lock TTL expire worker'i icin gereklidir.
     image: redis:7-alpine
-    command: redis-server --notify-keyspace-events KEx --appendonly yes
-    ports:
-      - "6379:6379"
+    command: redis-server --notify-keyspace-events KEx --appendonly yes --requirepass ${REDIS_PASSWORD:-CHANGE_ME}
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:-CHANGE_ME}
     volumes:
       - redis_data:/data
 
@@ -24,13 +56,12 @@ services:
     image: confluentinc/cp-zookeeper:7.6.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-    ports:
-      - "2181:2181"
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
       - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
+    # Internal listener containerlar arasi iletisim, PLAINTEXT listener local development icin override ile publish edilir.
     image: confluentinc/cp-kafka:7.6.0
     depends_on:
       - zookeeper
@@ -45,12 +76,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    ports:
-      - "9092:29092"
     volumes:
       - kafka_data:/var/lib/kafka/data
 
   debezium:
+    # Custom image Elasticsearch sink plugin'ini icerir; connector konfigleri infrastructure/debezium altindadir.
     build:
       context: ../debezium
     image: ticketgate/debezium-connect-elasticsearch:2.6
@@ -67,17 +97,17 @@ services:
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-    ports:
-      - "8083:8083"
+    expose:
+      - "8083"
 
   elasticsearch:
+    # Tek node local/compose deployment; production hardening sonraki guvenlik fazinda yapilacak.
     image: elasticsearch:8.13.0
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-CHANGE_ME}
       ES_JAVA_OPTS: -Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
 
@@ -87,8 +117,6 @@ services:
       - elasticsearch
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-    ports:
-      - "5601:5601"
     volumes:
       - kibana_data:/usr/share/kibana/data
 
@@ -99,13 +127,10 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: ticketgate
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    ports:
-      - "8080:8080"
 
   prometheus:
+    # Prometheus config ve alert rules repo icinden read-only mount edilir.
     image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
     volumes:
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -115,14 +140,13 @@ services:
       - "--storage.tsdb.retention.time=15d"
 
   grafana:
+    # Datasource ve dashboard provisioning dosyalari repo icinden read-only mount edilir.
     image: grafana/grafana:latest
     depends_on:
       - prometheus
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ticketgate
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-CHANGE_ME}
       GF_USERS_ALLOW_SIGN_UP: "false"
-    ports:
-      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ../grafana/provisioning:/etc/grafana/provisioning:ro

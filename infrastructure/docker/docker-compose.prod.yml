@@ -1,0 +1,95 @@
+# Production configuration.
+# Usage: docker compose -f docker-compose.yml \
+#        -f docker-compose.prod.yml up -d
+# Bu dosya yalnizca production davranisini override eder:
+# restart policy, resource limits ve healthcheck ayarlari burada tutulur.
+# Host port publish etmez; API container portu 5001 ic networkte kalir.
+
+services:
+  ticketgate-api:
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5001
+    # Compose deploy.resources limiti local compose tarafinda belgelendirici,
+    # swarm/uyumlu runtime tarafinda enforcement amaclidir.
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+        reservations:
+          memory: 256m
+    # Ready for scale - replicas: 1 by default.
+    # To increase: --scale ticketgate-api=2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    restart: unless-stopped
+    # PostgreSQL icin disk volume base dosyada tanimli; prod burada sadece calisma politikasini belirler.
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketgate -d ticketgate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    restart: unless-stopped
+    # Redis healthcheck REDISCLI_AUTH env degeriyle base dosyadaki requirepass ayarina uyumlu calisir.
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    restart: unless-stopped
+    # Kafka healthcheck sonraki hardening fazinda broker-level probe ile genisletilebilir.
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  elasticsearch:
+    restart: unless-stopped
+    # Cluster health endpoint'i Docker healthcheck icin yeterli hafif probe olarak kullanilir.
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  prometheus:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  grafana:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
