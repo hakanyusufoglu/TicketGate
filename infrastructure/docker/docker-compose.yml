@@ -9,7 +9,7 @@ services:
     build:
       context: ../..
       dockerfile: src/TicketGate.API/Dockerfile
-    image: ticketgate/api:latest
+    image: ${TICKETGATE_API_IMAGE:-ticketgate/api:latest}
     depends_on:
       - postgres
       - redis

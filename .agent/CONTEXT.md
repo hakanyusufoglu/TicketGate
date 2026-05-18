@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-Docker Compose Production tamamlandi. Aktif görev: P14 — CI/CD GitHub Actions.
+CI/CD GitHub Actions tamamlandi. Aktif görev: P15 — Environment + Secrets.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## Sıradaki Prompt
-P14 — CI/CD GitHub Actions
+P15 — Environment + Secrets
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -73,5 +73,8 @@ Prometheus + Grafana tamamlandi. TicketGate.API `UseHttpMetrics()` ve `MapMetric
 
 ## Son Tamamlanan Ara Gorev
 Docker Compose Production tamamlandi. `infrastructure/docker/docker-compose.yml` base servis tanimlarina ayrildi, `docker-compose.prod.yml` restart/resource/healthcheck katmani olarak eklendi ve `docker-compose.override.yml` development portlari icin olusturulup git disinda tutuldu. TicketGate.API `/health/live`, `/health/ready` ve `/health` endpointlerini sunuyor; readiness PostgreSQL, Redis, Kafka ve Elasticsearch kontrollerini kapsiyor. API Dockerfile curl destekli runtime image'a guncellendi, `.env.example` ve `infrastructure/scripts/migrate.sh` eklendi. Commit atilmadi.
+
+## Son Tamamlanan Ara Gorev
+CI/CD GitHub Actions tamamlandi. `.github/workflows/ci.yml` restore/build/test/migration check adimlarini main/master/develop push ve PR akislari icin tanimliyor. `.github/workflows/cd.yml` CI main branch'te basarili tamamlandiktan sonra GHCR image build/push, migration apply, deploy ve smoke test adimlarini tanimliyor; main push ile cift deploy olmamasi icin CD dogrudan push event'iyle tetiklenmiyor. Dependabot, branch protection dokumani ve PR template eklendi. Commit atilmadi; kullanici manuel testten sonra commit yapacak.
 
 

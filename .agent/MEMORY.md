@@ -46,6 +46,10 @@
 - [x] Dockerfile oluşturuldu
 - [x] .env.example oluşturuldu
 - [x] Migration script eklendi
+- [x] CI/CD pipeline tamamlandi
+- [x] GitHub Actions workflows eklendi
+- [x] Dependabot eklendi
+- [x] PR template eklendi
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -117,7 +121,7 @@
 | P12 | Seed data + Migration stratejisi | 🔄 |
 | P13 | Prometheus + Grafana | ✅ |
 | P14 | Docker Compose production (Health Checks dahil) | ✅ |
-| P15 | CI/CD — GitHub Actions | ⏳ |
+| P15 | CI/CD — GitHub Actions | ✅ |
 | P16 | Environment yönetimi + Secrets | ⏳ |
 | P17 | Security hardening + Built-in RateLimiter | ⏳ |
 | P18 | Performance optimizasyonu | ⏳ |
@@ -306,3 +310,16 @@
 |-------|-------|---------|
 | 2026-05-18 | Development override git disinda tutuldu | Lokal portlar ve development secret degerleri repo'ya production konfigu gibi commit edilmemeli; base/prod dosyalari deploy sozlesmesini tasir |
 | 2026-05-18 | Health checks API projesinde extension olarak tutuldu | Endpointler host seviyesinde davranis oldugu icin module boundary bozmaz; Docker Compose ve izleme araclari ayni endpointleri kullanabilir |
+
+## 2026-05-18 CI/CD GitHub Actions Notu
+
+- [x] `.github/workflows/ci.yml` eklendi; main/master/develop push ve PR akislari icin restore, build, test ve migration check adimlarini calistiriyor.
+- [x] `.github/workflows/cd.yml` eklendi; CI main branch'te basarili tamamlaninca GHCR image build/push, migration apply, deploy ve smoke test akisini tanimliyor.
+- [x] `infrastructure/docker/docker-compose.yml` API image degeri `TICKETGATE_API_IMAGE` ile override edilebilir hale getirildi; CD server tarafinda SHA tag'li GHCR image'i kullanabiliyor.
+- [x] `.github/dependabot.yml`, `.github/branch-protection.md` ve `.github/pull_request_template.md` eklendi.
+- [x] Commit atilmadi; kullanici manuel testten sonra commit yapilacagini belirtti.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-18 | CD workflow sadece CI success workflow_run ile tetikleniyor | Main push'ta CI bitmeden deploy baslamasin ve ayni commit icin cift deploy olusmasin |
+| 2026-05-18 | Compose API image environment override ile yonetiliyor | Base compose local `ticketgate/api:latest` davranisini korurken production deploy GHCR SHA tag'li imaji cekebiliyor |

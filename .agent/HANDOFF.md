@@ -1,4 +1,33 @@
-﻿## SON HANDOFF - 2026-05-18 Docker Compose Production
+﻿## SON HANDOFF - 2026-05-18 CI/CD GitHub Actions
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; aktif gorevin P15 CI/CD GitHub Actions oldugu dogrulandi.
+- `.github/workflows/ci.yml` eklendi: main/master/develop push ve PR akislari icin restore, build, test ve migration check.
+- `.github/workflows/cd.yml` eklendi: CI main branch'te basarili tamamlaninca GHCR image build/push, migration apply, deploy ve smoke test.
+- CD workflow icin `packages: write` izni eklendi ve checkout `workflow_run.head_sha` uzerinden yapiliyor.
+- `infrastructure/docker/docker-compose.yml` API image degeri `TICKETGATE_API_IMAGE` ile override edilebilir hale getirildi.
+- `.github/dependabot.yml`, `.github/branch-protection.md` ve `.github/pull_request_template.md` eklendi.
+- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` P15 tamamlandi, siradaki aktif gorev Environment + Secrets olacak sekilde guncellendi.
+
+### Dogrulama
+- YAML parse kontrolu sonraki adimda yapildi.
+- `dotnet restore TicketGate.sln`, `dotnet build TicketGate.sln --no-restore --configuration Release -v minimal`, `dotnet test TicketGate.sln --no-build --configuration Release -v minimal -m:1` ve compose config kontrolu bu session sonunda calistirildi.
+
+### Dikkat
+- Commit atilmadi; kullanici manuel testten sonra commit yapilacagini belirtti.
+- CD icin GitHub Actions secrets gerekli: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`.
+- Server tarafinda GHCR private package kullanilacaksa production host icin registry login stratejisi P15/P16 Environment + Secrets kapsaminda netlestirilmeli.
+- CD workflow dogrudan push ile tetiklenmiyor; CI success sonrasinda calisiyor. Bu, main push + workflow_run cift deploy riskini engeller.
+
+### Siradaki Gorev
+P15 - Environment + Secrets
+
+---
+## SON HANDOFF - 2026-05-18 Docker Compose Production
 
 ### Proje
 TicketGate - bilet satis platformu
