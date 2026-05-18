@@ -1,0 +1,43 @@
+# CD workflow intentionally disabled for now.
+#
+# TicketGate currently runs only CI on GitHub Actions because there is no
+# production server configured yet. Keep this file as a deployment roadmap.
+#
+# To enable CD later:
+# 1. Add GitHub Actions secrets:
+#    - SERVER_HOST
+#    - SERVER_USER
+#    - SERVER_SSH_KEY
+# 2. Prepare the production server:
+#    - Docker and Docker Compose installed
+#    - Repository cloned at /opt/ticketgate
+#    - /opt/ticketgate/.env filled with production values
+#    - GitHub Container Registry access configured if the package is private
+# 3. Replace the disabled trigger below with:
+#    on:
+#      workflow_run:
+#        workflows: [CI]
+#        types: [completed]
+#        branches: [master]
+# 4. Re-add deployment jobs:
+#    - Docker build and push
+#    - Migration apply through infrastructure/scripts/migrate.sh
+#    - Docker Compose deploy
+#    - Smoke test against /health/live and /health/ready
+#
+# Production must not call db.Database.MigrateAsync(); migrations stay as a
+# separate CI/CD step.
+
+name: CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disabled:
+    name: CD Disabled
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - name: Deployment roadmap
+        run: echo "CD is documented but disabled until production secrets and server are ready."
