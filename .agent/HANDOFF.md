@@ -1,4 +1,4 @@
-﻿## SON HANDOFF - 2026-05-18 CI/CD GitHub Actions
+﻿## SON HANDOFF - 2026-05-18 CI GitHub Actions + Disabled CD Roadmap
 
 ### Proje
 TicketGate - bilet satis platformu
@@ -6,26 +6,32 @@ TicketGate - bilet satis platformu
 
 ### Bu Session'da Yapilanlar
 - Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; aktif gorevin P15 CI/CD GitHub Actions oldugu dogrulandi.
-- `.github/workflows/ci.yml` eklendi: main/master/develop push ve PR akislari icin restore, build, test ve migration check.
-- `.github/workflows/cd.yml` eklendi: CI main branch'te basarili tamamlaninca GHCR image build/push, migration apply, deploy ve smoke test.
-- CD workflow icin `packages: write` izni eklendi ve checkout `workflow_run.head_sha` uzerinden yapiliyor.
+- GitHub remote default branch'in `master` oldugu dogrulandi; ana branch master olarak kabul edildi, main branch bu repo icin onemli degil.
+- `.github/workflows/ci.yml` eklendi ve duzeltildi: main/master/develop push ve PR akislari icin restore, build, test ve migration check.
+- CI migration check once Debug output aradigi icin GitHub'da fail oldu; EF komutlarina `--configuration Release` eklenerek duzeltildi.
+- `.github/workflows/cd.yml` roadmap olarak tutuldu; otomatik deploy devre disi. Dosya `workflow_dispatch` ve `if: false` ile sadece dokumantasyon/ileride doldurma amacli.
 - `infrastructure/docker/docker-compose.yml` API image degeri `TICKETGATE_API_IMAGE` ile override edilebilir hale getirildi.
-- `.github/dependabot.yml`, `.github/branch-protection.md` ve `.github/pull_request_template.md` eklendi.
-- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` P15 tamamlandi, siradaki aktif gorev Environment + Secrets olacak sekilde guncellendi.
+- `.github/dependabot.yml` once eklendi; cok sayida Dependabot PR'i ve kirmizi run olusturdugu icin silindi.
+- Acik Dependabot PR'lari kapatildi; GitHub REST kontrolunde open PR count 0 goruldu.
+- `.github/branch-protection.md` master branch icin sadelestirildi ve `.github/pull_request_template.md` eklendi.
+- `.agent/MEMORY.md`, `.agent/CONTEXT.md` ve `.agent/HANDOFF.md` son duruma gore guncellendi.
 
 ### Dogrulama
-- YAML parse kontrolu sonraki adimda yapildi.
-- `dotnet restore TicketGate.sln`, `dotnet build TicketGate.sln --no-restore --configuration Release -v minimal`, `dotnet test TicketGate.sln --no-build --configuration Release -v minimal -m:1` ve compose config kontrolu bu session sonunda calistirildi.
+- `dotnet restore TicketGate.sln`: basarili; mevcut NuGet vulnerability uyarilari devam ediyor.
+- `dotnet build TicketGate.sln --no-restore --configuration Release -v minimal`: basarili.
+- `dotnet test TicketGate.sln --no-build --configuration Release -v minimal -m:1`: basarili, toplam 70 test.
+- EF migration list komutlari `--context` ve `--configuration Release` ile basarili calisti.
+- Docker build `docker build -f src/TicketGate.API/Dockerfile -t ticketgate-api-ci-test .`: basarili.
+- GitHub Actions master CI run'lari yesil calisti; eski kirmizi CD/Dependabot run'lari gecmis kaydi.
 
 ### Dikkat
-- Commit atilmadi; kullanici manuel testten sonra commit yapilacagini belirtti.
-- CD icin GitHub Actions secrets gerekli: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`.
-- Server tarafinda GHCR private package kullanilacaksa production host icin registry login stratejisi P15/P16 Environment + Secrets kapsaminda netlestirilmeli.
-- CD workflow dogrudan push ile tetiklenmiyor; CI success sonrasinda calisiyor. Bu, main push + workflow_run cift deploy riskini engeller.
+- CD deploy su an calismaz ve calismamali; production server/secrets hazir degil.
+- `cd.yml` icindeki roadmap, ileride gerekli secrets ve server hazirligi tamamlaninca aktif hale getirilecek.
+- Dependabot kapali; paket/action upgrade'leri ileride bilincli ve tek tek ele alinmali.
+- Actions ekraninda eski kirmizi run'lar silinmedi; bunlar aktif problem degil.
 
 ### Siradaki Gorev
 P15 - Environment + Secrets
-
 ---
 ## SON HANDOFF - 2026-05-18 Docker Compose Production
 

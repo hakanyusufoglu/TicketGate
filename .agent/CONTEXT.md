@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-CI/CD GitHub Actions tamamlandi. Aktif görev: P15 — Environment + Secrets.
+CI GitHub Actions tamamlandi. CD workflow roadmap olarak repo'da duruyor ama deploy devre disi. Aktif görev: P15 — Environment + Secrets.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -75,6 +75,6 @@ Prometheus + Grafana tamamlandi. TicketGate.API `UseHttpMetrics()` ve `MapMetric
 Docker Compose Production tamamlandi. `infrastructure/docker/docker-compose.yml` base servis tanimlarina ayrildi, `docker-compose.prod.yml` restart/resource/healthcheck katmani olarak eklendi ve `docker-compose.override.yml` development portlari icin olusturulup git disinda tutuldu. TicketGate.API `/health/live`, `/health/ready` ve `/health` endpointlerini sunuyor; readiness PostgreSQL, Redis, Kafka ve Elasticsearch kontrollerini kapsiyor. API Dockerfile curl destekli runtime image'a guncellendi, `.env.example` ve `infrastructure/scripts/migrate.sh` eklendi. Commit atilmadi.
 
 ## Son Tamamlanan Ara Gorev
-CI/CD GitHub Actions tamamlandi. `.github/workflows/ci.yml` restore/build/test/migration check adimlarini main/master/develop push ve PR akislari icin tanimliyor. `.github/workflows/cd.yml` CI main branch'te basarili tamamlandiktan sonra GHCR image build/push, migration apply, deploy ve smoke test adimlarini tanimliyor; main push ile cift deploy olmamasi icin CD dogrudan push event'iyle tetiklenmiyor. Dependabot, branch protection dokumani ve PR template eklendi. Commit atilmadi; kullanici manuel testten sonra commit yapacak.
+CI/CD GitHub Actions kurulumu son duruma hizalandi. `.github/workflows/ci.yml` master/main/develop push ve PR akislari icin restore, build, test ve migration check adimlarini calistiriyor; migration check `--context` ve `--configuration Release` kullaniyor. Repo ana branch'i master olarak kabul edildi; main branch bu proje icin onemli degil. `.github/workflows/cd.yml` dosyasi silinmedi, roadmap olarak tutuldu; `workflow_dispatch` ve `if: false` ile otomatik deploy devre disi, ileride SERVER_HOST/SERVER_USER/SERVER_SSH_KEY ve production server hazirlaninca doldurulacak. Dependabot PR kalabaligi ve kirmizi run'lar nedeniyle `.github/dependabot.yml` silindi, acik Dependabot PR'lari kapatildi. Son CI run'lari master icin yesil calisiyor; eski kirmizi CD/Dependabot run'lari sadece gecmis kaydi.
 
 

@@ -48,8 +48,9 @@
 - [x] Migration script eklendi
 - [x] CI/CD pipeline tamamlandi
 - [x] GitHub Actions workflows eklendi
-- [x] Dependabot eklendi
+- [x] Dependabot eklendi, sonra temiz GitHub Actions ekrani icin devre disi birakildi
 - [x] PR template eklendi
+- [x] CD workflow roadmap olarak tutuldu, otomatik deploy devre disi
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -314,12 +315,17 @@
 ## 2026-05-18 CI/CD GitHub Actions Notu
 
 - [x] `.github/workflows/ci.yml` eklendi; main/master/develop push ve PR akislari icin restore, build, test ve migration check adimlarini calistiriyor.
-- [x] `.github/workflows/cd.yml` eklendi; CI main branch'te basarili tamamlaninca GHCR image build/push, migration apply, deploy ve smoke test akisini tanimliyor.
+- [x] CI migration check `--context` ve `--configuration Release` ile duzeltildi; Release build sonrasi EF CLI artik Debug output aramiyor.
+- [x] `.github/workflows/cd.yml` roadmap olarak tutuldu; `workflow_dispatch` + `if: false` ile otomatik deploy devre disi.
 - [x] `infrastructure/docker/docker-compose.yml` API image degeri `TICKETGATE_API_IMAGE` ile override edilebilir hale getirildi; CD server tarafinda SHA tag'li GHCR image'i kullanabiliyor.
-- [x] `.github/dependabot.yml`, `.github/branch-protection.md` ve `.github/pull_request_template.md` eklendi.
-- [x] Commit atilmadi; kullanici manuel testten sonra commit yapilacagini belirtti.
+- [x] `.github/branch-protection.md` master branch icin guncellendi; main branch notu kaldirildi.
+- [x] `.github/pull_request_template.md` eklendi.
+- [x] `.github/dependabot.yml` once eklendi; olusan Dependabot PR/kirmizi run kalabaligi nedeniyle silindi ve acik Dependabot PR'lari kapatildi.
+- [x] CI GitHub'da master branch icin yesil calisti; CD eski aktif denemeden kalan kirmizi run disinda yeni deploy tetiklemeyecek.
 
 | Tarih | Karar | Gerekce |
 |-------|-------|---------|
-| 2026-05-18 | CD workflow sadece CI success workflow_run ile tetikleniyor | Main push'ta CI bitmeden deploy baslamasin ve ayni commit icin cift deploy olusmasin |
+| 2026-05-18 | Ana branch master kabul edildi | GitHub remote HEAD `master`; main branch bu repo icin kullanilmiyor |
+| 2026-05-18 | CD workflow disabled roadmap olarak tutuldu | Production server/secrets hazir degil; repo'ya giren gelistirici CD yol haritasini gorsun ama deploy tetiklenmesin |
+| 2026-05-18 | Dependabot devre disi birakildi | Ilk kurulumda cok sayida major upgrade PR'i ve kirmizi run olusturdu; temiz CI gorunurlugu tercih edildi |
 | 2026-05-18 | Compose API image environment override ile yonetiliyor | Base compose local `ticketgate/api:latest` davranisini korurken production deploy GHCR SHA tag'li imaji cekebiliyor |
