@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Core.Extensions;
+using TicketGate.Core.Metrics;
 using TicketGate.Notification.Configuration;
 using TicketGate.Notification.Domain;
 
@@ -156,6 +157,8 @@ public static class SseEndpoints
 
         try
         {
+            TicketGateMetrics.ActiveSseConnections.Inc();
+
             foreach (var channel in channels)
             {
                 await subscriber.SubscribeAsync(channel, async (_, message) =>
@@ -177,6 +180,8 @@ public static class SseEndpoints
         }
         finally
         {
+            TicketGateMetrics.ActiveSseConnections.Dec();
+
             foreach (var channel in channels)
             {
                 await subscriber.UnsubscribeAsync(channel);

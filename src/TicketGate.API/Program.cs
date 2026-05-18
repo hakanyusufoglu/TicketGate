@@ -1,6 +1,7 @@
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Elasticsearch;
+using Prometheus;
 using TicketGate.API.Middleware;
 using TicketGate.API.Seed;
 using TicketGate.Core.Extensions;
@@ -39,7 +40,20 @@ builder.Host.UseSerilog();
 builder.Services.AddModules(builder.Configuration);
 var app = builder.Build();
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+/// <summary>
+/// HTTP request metriklerini otomatik toplar.
+/// Status code, method ve endpoint label'lari Prometheus tarafindan scrape edilir.
+/// </summary>
+app.UseHttpMetrics();
+
 app.MapModules();
+
+/// <summary>
+/// Prometheus metrik endpoint'i. /metrics path'inde tum uygulama metriklerini Prometheus formatinda sunar.
+/// Grafana bu endpoint'i Prometheus veri kaynagi uzerinden gorsellestirir.
+/// </summary>
+app.MapMetrics();
 
 /// <summary>
 /// Development ortamında test verilerini otomatik oluşturur.

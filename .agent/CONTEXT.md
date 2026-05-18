@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif GÃ¶rev
-P11 CDC Debezium + Kafka + Elasticsearch tamamlandi. Aktif görev: P12 — Prometheus + Grafana.
+Prometheus + Grafana tamamlandi. Aktif görev: P13 — Docker Compose Production.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## SÄ±radaki Prompt
-P12 — Prometheus + Grafana
+P13 — Docker Compose Production
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -67,5 +67,8 @@ Notification P10 tamamlandi. SseEventTypes ve SseChannels contract'lari eklendi;
 
 ## Son Tamamlanan Ara Gorev
 CDC P11 tamamlandi. Docker Compose tum servisleri calistiriyor; Debezium Connect imaji Elasticsearch sink plugin'i ile build ediliyor. Postgres `wal_level=logical`, `ticketgate_pub` publication'i booking/payment schema tablolarini kapsiyor ve outbox CDC disinda kaldi. Debezium source connector `db.booking.tickets` ve `db.payment.payments` topic'lerini uretiyor; sink connector TimestampRouter ile `ticketgate-db.*-yyyy.MM` indexlerine yaziyor. Serilog + Elasticsearch sink ve CorrelationId middleware TicketGate.API'ye eklendi.
+
+## Son Tamamlanan Ara Gorev
+Prometheus + Grafana tamamlandi. TicketGate.API `UseHttpMetrics()` ve `MapMetrics()` ile `/metrics` endpoint'i sunuyor. `TicketGateMetrics` shared kernel altinda tutuldu; Booking rezervasyon/lock/waiting room, Payment outbox/payment/dead-letter ve Notification SSE baglanti metriklerini Prometheus'a yaziyor. Prometheus scrape config, alert rules, Grafana datasource/dashboard provisioning ve 9 panelli TicketGate dashboard eklendi. Docker Compose Prometheus ve Grafana servisleriyle guncellendi.
 
 

@@ -463,3 +463,39 @@ TicketGate - bilet satis platformu
 P12 — Prometheus + Grafana
 
 ---
+## SON HANDOFF - 2026-05-18 Prometheus + Grafana
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- TicketGate.API'ye `prometheus-net` ve `prometheus-net.AspNetCore` paketleri eklendi.
+- `Program.cs` HTTP request metrics middleware ve `/metrics` endpoint'i ile guncellendi.
+- `TicketGateMetrics` `TicketGate.Core.Metrics` altina eklendi; API projesine ters referans olusmamasi icin shared kernel tercih edildi.
+- ReserveTicket, lock cleanup, waiting room, OutboxWorker ve SSE stream akislari ozel Prometheus metriklerini yazacak sekilde guncellendi.
+- `infrastructure/prometheus/prometheus.yml` ve `alerts.yml` eklendi.
+- Grafana Prometheus datasource provisioning, dashboard provider ve 9 panelli `ticketgate.json` dashboard eklendi.
+- docker-compose Prometheus ve Grafana servisleri, kalici volume'ler ve provisioning mount'lariyla guncellendi.
+- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` Prometheus + Grafana tamamlandi, siradaki aktif gorev Docker Compose Production olacak sekilde guncellendi.
+
+### Dogrulama
+- RED: `TicketGateMetricsTests` once `TicketGate.Core.Metrics` ve `Prometheus` referanslari olmadigi icin derlemede fail verdi.
+- GREEN: `dotnet test tests\TicketGate.Booking.Tests\TicketGate.Booking.Tests.csproj --filter TicketGateMetricsTests -v minimal` basarili, 1/1.
+- `dotnet restore TicketGate.sln`: basarili, mevcut NuGet guvenlik uyarilari devam ediyor.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili.
+- `docker compose -f infrastructure\docker\docker-compose.yml config`: basarili.
+- Grafana dashboard JSON parse kontrolu basarili.
+- `dotnet test TicketGate.sln --no-build -v minimal`: ilk kosuda Notification Testcontainers Docker named pipe timeout flake'i verdi; izole tekrar gecti.
+- `dotnet test TicketGate.sln --no-build -v minimal`: ikinci tam kosuda tum testler basarili; Event 10/10, Identity 10/10, Notification 3/3, Payment 19/19, Booking 27/27.
+
+### Dikkat
+- Prompt `TicketGateMetrics` icin API path'i vermisti; bu modullerden API'ye ters referans gerektirdigi icin uygulanmadi. Metrik class'i Core'da tutuldu.
+- Prometheus config prompttaki gibi Kafka `:9092` ve Postgres `:5432` target'larini iceriyor; exporter servisleri P13/P14 production compose asamasinda ayrica degerlendirilmeli.
+- `/metrics` icin kisa runtime curl denemesi PowerShell background process davranisi nedeniyle tamamlanmadi; build, test, compose config ve dashboard parse dogrulamalari basarili.
+- Mevcut transitive NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Siradaki Gorev
+P13 - Docker Compose Production
+
+---

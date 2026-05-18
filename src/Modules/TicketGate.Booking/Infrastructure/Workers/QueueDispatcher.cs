@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Core.Events;
+using TicketGate.Core.Metrics;
 
 namespace TicketGate.Booking.Infrastructure.Workers;
 
@@ -166,6 +167,7 @@ public sealed class QueueDispatcher(
         cancellationToken.ThrowIfCancellationRequested();
         var remainingUsers = await db.SortedSetRangeByRankAsync(ToWaitingRoomKey(eventId), order: Order.Ascending);
         var total = remainingUsers.LongLength;
+        TicketGateMetrics.WaitingRoomDepth.WithLabels(eventId.ToString()).Set(total);
 
         if (total == 0)
         {

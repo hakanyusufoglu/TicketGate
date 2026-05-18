@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TicketGate.Core.Events;
+using TicketGate.Core.Metrics;
 using TicketGate.Payment.Configuration;
 using TicketGate.Payment.Infrastructure.Gateways;
 using TicketGate.Payment.Infrastructure.Outbox;
@@ -86,6 +88,8 @@ public sealed class OutboxWorker(
         IPublisher publisher,
         CancellationToken cancellationToken)
     {
+        var startedAt = Stopwatch.GetTimestamp();
+
         try
         {
             switch (message.Type)
@@ -98,6 +102,11 @@ public sealed class OutboxWorker(
                     break;
                 default:
                     message.MarkFailed($"Unsupported outbox message type '{message.Type}'.");
+                    if (message.IsDeadLetter(_settings.MaxRetryCount))
+                    {
+                        TicketGateMetrics.OutboxDeadLetters.WithLabels(message.Type).Inc();
+                    }
+
                     logger.LogError("Unsupported outbox message type {MessageType} for {MessageId}", message.Type, message.Id);
                     break;
             }
@@ -105,7 +114,19 @@ public sealed class OutboxWorker(
         catch (Exception ex)
         {
             message.MarkFailed(ex.Message);
+            if (message.IsDeadLetter(_settings.MaxRetryCount))
+            {
+                TicketGateMetrics.OutboxDeadLetters.WithLabels(message.Type).Inc();
+            }
+
             logger.LogError(ex, "Failed to process outbox message {MessageId}", message.Id);
+        }
+        finally
+        {
+            TicketGateMetrics
+                .OutboxProcessingDuration
+                .WithLabels(message.Type, "processing")
+                .Observe(Stopwatch.GetElapsedTime(startedAt).TotalSeconds);
         }
     }
 
@@ -144,6 +165,7 @@ public sealed class OutboxWorker(
                 new PaymentCompleted(payload.PaymentId, payload.TicketId, payload.UserId),
                 cancellationToken);
 
+            TicketGateMetrics.Payments.WithLabels("completed").Inc();
             logger.LogInformation("Payment completed: {PaymentId}", payload.PaymentId);
             return;
         }
@@ -153,6 +175,8 @@ public sealed class OutboxWorker(
         if (message.IsDeadLetter(_settings.MaxRetryCount))
         {
             payment?.Fail();
+            TicketGateMetrics.Payments.WithLabels("failed").Inc();
+            TicketGateMetrics.OutboxDeadLetters.WithLabels(message.Type).Inc();
 
             await publisher.Publish(
                 new PaymentFailed(payload.PaymentId, payload.TicketId, payload.UserId),
@@ -193,6 +217,7 @@ public sealed class OutboxWorker(
                 new PaymentRefunded(payload.PaymentId, payload.TicketId, payload.UserId),
                 cancellationToken);
 
+            TicketGateMetrics.Payments.WithLabels("refunded").Inc();
             logger.LogInformation("Payment refunded: {PaymentId}", payload.PaymentId);
             return;
         }
@@ -201,6 +226,7 @@ public sealed class OutboxWorker(
 
         if (message.IsDeadLetter(_settings.MaxRetryCount))
         {
+            TicketGateMetrics.OutboxDeadLetters.WithLabels(message.Type).Inc();
             logger.LogCritical(
                 "Refund dead letter: {PaymentId} after {RetryCount} retries",
                 payload.PaymentId,

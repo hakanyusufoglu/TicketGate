@@ -9,6 +9,7 @@ using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Core.Metrics;
 
 namespace TicketGate.Booking.Infrastructure.Workers;
 
@@ -121,6 +122,7 @@ public sealed class TicketLockExpiredWorker(
             var lockedByUserId = ticket.LockedByUserId;
             ticket.Release();
             await db.SaveChangesAsync(cancellationToken);
+            TicketGateMetrics.ActiveLocks.Dec();
 
             await publisher.Publish(
                 new TicketReleased(ticket.Id, ticket.EventId, lockedByUserId),

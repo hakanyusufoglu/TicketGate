@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Core.Events;
+using TicketGate.Core.Metrics;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;
@@ -39,6 +40,8 @@ internal sealed class JoinQueueHandler(
         var queueKey = ToWaitingRoomKey(request.EventId);
         var score = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await db.SortedSetAddAsync(queueKey, request.UserId.ToString(), score, When.NotExists);
+        var queueDepth = await db.SortedSetLengthAsync(queueKey);
+        TicketGateMetrics.WaitingRoomDepth.WithLabels(request.EventId.ToString()).Set(queueDepth);
 
         var rank = await db.SortedSetRankAsync(queueKey, request.UserId.ToString(), Order.Ascending);
         var position = (rank ?? 0) + 1;

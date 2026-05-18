@@ -38,6 +38,9 @@
 - [x] Elasticsearch index template
 - [x] Serilog + Elasticsearch entegrasyonu
 - [x] Correlation ID middleware
+- [x] Prometheus + Grafana tamamlandi
+- [x] Ozel metrikler eklendi
+- [x] Alert rules tanimlandi
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -107,7 +110,7 @@
 | P10 | Notification — SSE + Redis fan-out | ✅ |
 | P11 | CDC — Debezium + Kafka + Elasticsearch | ✅ |
 | P12 | Seed data + Migration stratejisi | 🔄 |
-| P13 | Prometheus + Grafana | ⏳ |
+| P13 | Prometheus + Grafana | ✅ |
 | P14 | Docker Compose production (Health Checks dahil) | ⏳ |
 | P15 | CI/CD — GitHub Actions | ⏳ |
 | P16 | Environment yönetimi + Secrets | ⏳ |
@@ -271,3 +274,16 @@
 | 2026-05-17 | Debezium Connect imajina Elasticsearch sink plugin'i eklendi | `debezium/connect:2.6` Postgres CDC plugin'lerini tasiyor ama Confluent Elasticsearch sink sinifini icermiyor |
 | 2026-05-17 | Sink index adi TimestampRouter ile ay bazli yapiliyor | Confluent Elasticsearch sink index adini topic'ten aliyor; resmi SMT yaklasimi date suffix icin `TimestampRouter` kullaniyor |
 | 2026-05-17 | Debezium decimal handling double yapildi | Schemaless JSON'da decimal bytes base64 string'e donusuyordu ve Elasticsearch float mapping'i bulk insert'i reddediyordu |
+
+## 2026-05-18 Prometheus + Grafana Notu
+
+- [x] `prometheus-net` ve `prometheus-net.AspNetCore` paketleri eklendi.
+- [x] TicketGate.API `/metrics` endpoint'i ve HTTP request metrics middleware'i eklendi.
+- [x] `TicketGateMetrics` shared kernel altina alindi; moduller API projesine referans vermeden rezervasyon, Redis lock, waiting room, outbox, payment ve SSE metriklerini yaziyor.
+- [x] Prometheus scrape config ve alert rules eklendi.
+- [x] Grafana datasource, dashboard provisioning ve 9 panelli TicketGate dashboard eklendi.
+- [x] docker-compose Prometheus ve Grafana servisleri ile guncellendi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-18 | TicketGateMetrics Core altinda tutuldu | Prompt API altina koysa da Booking/Payment/Notification modulleri API'ye referans veremez; shared kernel moduler monolith sinirini bozmadan ortak metrik sozlesmesi saglar |

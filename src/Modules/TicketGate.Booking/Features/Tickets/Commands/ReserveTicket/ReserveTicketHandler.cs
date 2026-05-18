@@ -8,6 +8,7 @@ using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
+using TicketGate.Core.Metrics;
 
 namespace TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 
@@ -38,6 +39,7 @@ internal sealed class ReserveTicketHandler(
 
         if (!lockTaken)
         {
+            TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
             return Result<ReserveTicketResponse>.Fail(AppError.TicketAlreadyLocked(request.TicketId));
         }
 
@@ -50,12 +52,14 @@ internal sealed class ReserveTicketHandler(
             if (ticket is null)
             {
                 await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
+                TicketGateMetrics.TicketReservations.WithLabels("not_found").Inc();
                 return Result<ReserveTicketResponse>.Fail(AppError.NotFound("Ticket", request.TicketId));
             }
 
             if (ticket.Status != TicketStatus.Available)
             {
                 await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
+                TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
                 return Result<ReserveTicketResponse>.Fail(AppError.Conflict(
                     "ticket.not_available",
                     $"Ticket '{request.TicketId}' is not available."));
@@ -69,6 +73,9 @@ internal sealed class ReserveTicketHandler(
                 new TicketReserved(ticket.Id, ticket.EventId, ticket.Seat, ticket.Price, request.UserId, expiresAt),
                 cancellationToken);
 
+            TicketGateMetrics.TicketReservations.WithLabels("success").Inc();
+            TicketGateMetrics.ActiveLocks.Inc();
+
             return Result<ReserveTicketResponse>.Ok(new ReserveTicketResponse(
                 ticket.Id,
                 ticket.Seat,
@@ -78,6 +85,7 @@ internal sealed class ReserveTicketHandler(
         catch (DbUpdateConcurrencyException)
         {
             await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
+            TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
             return Result<ReserveTicketResponse>.Fail(AppError.ConcurrencyConflict());
         }
     }

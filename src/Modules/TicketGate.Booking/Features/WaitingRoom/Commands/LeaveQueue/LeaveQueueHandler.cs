@@ -1,6 +1,7 @@
 using MediatR;
 using StackExchange.Redis;
 using TicketGate.Core.Errors;
+using TicketGate.Core.Metrics;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Booking.Features.WaitingRoom.Commands.LeaveQueue;
@@ -20,7 +21,14 @@ internal sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var db = redis.GetDatabase();
-        var removed = await db.SortedSetRemoveAsync(ToWaitingRoomKey(request.EventId), request.UserId.ToString());
+        var queueKey = ToWaitingRoomKey(request.EventId);
+        var removed = await db.SortedSetRemoveAsync(queueKey, request.UserId.ToString());
+
+        if (removed)
+        {
+            var queueDepth = await db.SortedSetLengthAsync(queueKey);
+            TicketGateMetrics.WaitingRoomDepth.WithLabels(request.EventId.ToString()).Set(queueDepth);
+        }
 
         return removed
             ? Result.Ok()

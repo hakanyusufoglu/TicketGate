@@ -4,6 +4,7 @@ using StackExchange.Redis;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Core.Metrics;
 
 namespace TicketGate.Booking.Features.Tickets.EventHandlers;
 
@@ -35,7 +36,11 @@ public sealed class PaymentFailedHandler(
         ticket.Release();
         await db.SaveChangesAsync(cancellationToken);
 
-        await redis.GetDatabase().KeyDeleteAsync(ToLockKey(notification.TicketId));
+        if (await redis.GetDatabase().KeyDeleteAsync(ToLockKey(notification.TicketId)))
+        {
+            TicketGateMetrics.ActiveLocks.Dec();
+        }
+
         await publisher.Publish(
             new TicketReleased(ticket.Id, ticket.EventId, releasedUserId),
             cancellationToken);
