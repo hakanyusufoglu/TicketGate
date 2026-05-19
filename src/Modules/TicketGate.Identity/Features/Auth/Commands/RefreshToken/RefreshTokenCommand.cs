@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using TicketGate.Core.Results;
 using TicketGate.Identity.Features.Auth.Commands.LoginUser;
 

@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using TicketGate.Booking.Domain.Enums;
@@ -15,13 +15,13 @@ namespace TicketGate.Booking.Features.Tickets.EventHandlers;
 public sealed class PaymentFailedHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
-    IPublisher publisher) : INotificationHandler<PaymentFailed>
+    IMediator mediator) : INotificationHandler<PaymentFailed>
 {
     /// <summary>
     /// Ticket'i Reserved durumundaysa Available durumuna alir.
     /// Redis lock manuel silinir ve TicketReleased event'i publish edilerek seat status fan-out akisi korunur.
     /// </summary>
-    public async Task Handle(PaymentFailed notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(PaymentFailed notification, CancellationToken cancellationToken)
     {
         var ticket = await db.Tickets.FirstOrDefaultAsync(
             item => item.Id == notification.TicketId,
@@ -41,7 +41,7 @@ public sealed class PaymentFailedHandler(
             TicketGateMetrics.DecrementActiveLocks();
         }
 
-        await publisher.Publish(
+        await mediator.Publish(
             new TicketReleased(ticket.Id, ticket.EventId, releasedUserId),
             cancellationToken);
     }

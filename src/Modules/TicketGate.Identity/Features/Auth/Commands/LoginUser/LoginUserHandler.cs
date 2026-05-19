@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +17,7 @@ namespace TicketGate.Identity.Features.Auth.Commands.LoginUser;
 public sealed class LoginUserHandler(IdentityDbContext db, IOptions<JwtSettings> jwtOptions)
     : IRequestHandler<LoginUserCommand, Result<LoginUserResponse>>
 {
-    public async Task<Result<LoginUserResponse>> Handle(
+    public async ValueTask<Result<LoginUserResponse>> Handle(
         LoginUserCommand request,
         CancellationToken cancellationToken)
     {

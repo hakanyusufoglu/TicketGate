@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
@@ -12,7 +12,7 @@ namespace TicketGate.Event.Features.Events.Commands.PublishEvent;
 /// Event publish komutunu isler.
 /// EF Core tracking ile state degistirir; basarili publish sonrasi detail cache ve event list output cache temizlenir.
 /// </summary>
-internal sealed class PublishEventHandler(
+public sealed class PublishEventHandler(
     EventDbContext db,
     IEventCacheService cacheService,
     IOutputCacheStore outputCacheStore) : IRequestHandler<PublishEventCommand, Result>
@@ -21,7 +21,7 @@ internal sealed class PublishEventHandler(
     /// Event'i tracked sorguyla yukler, publish state gecisini yapar ve cache invalidation uygular.
     /// Command handler tracking gerektirdigi icin AsNoTracking kullanmaz.
     /// </summary>
-    public async Task<Result> Handle(PublishEventCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(PublishEventCommand request, CancellationToken cancellationToken)
     {
         var eventEntity = await db.Events
             .FirstOrDefaultAsync(existingEvent => existingEvent.Id == request.Id, cancellationToken);

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Booking.Domain.Enums;
@@ -19,7 +19,7 @@ public sealed class GenerateTicketsHandlerTests : BookingIntegrationTestBase
     public async Task Handle_ShouldCreateTicketForEachSeatInSeatMap()
     {
         var eventId = Guid.NewGuid();
-        var sender = Services.GetRequiredService<ISender>();
+        var sender = Services.GetRequiredService<IMediator>();
 
         var result = await sender.Send(new GenerateTicketsCommand(eventId, CreateSeatMap()));
 
@@ -45,7 +45,7 @@ public sealed class GenerateTicketsHandlerTests : BookingIntegrationTestBase
     public async Task Handle_ShouldReturnConflict_WhenTicketsAlreadyGeneratedForEvent()
     {
         var eventId = Guid.NewGuid();
-        var sender = Services.GetRequiredService<ISender>();
+        var sender = Services.GetRequiredService<IMediator>();
 
         await sender.Send(new GenerateTicketsCommand(eventId, CreateSeatMap()));
 

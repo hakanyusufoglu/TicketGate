@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;

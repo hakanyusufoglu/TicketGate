@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -24,7 +24,7 @@ public abstract class PaymentIntegrationTestBase : IntegrationTestBase
 
     /// <summary>
     /// Payment testleri icin gerekli servisleri kaydeder.
-    /// PaymentDbContext, MediatR ve fake ticket reservation reader gercek PostgreSQL uzerinde outbox davranisini dogrular.
+    /// PaymentDbContext, Mediator ve fake ticket reservation reader gercek PostgreSQL uzerinde outbox davranisini dogrular.
     /// </summary>
     protected override void ConfigureServices(IServiceCollection services)
     {
@@ -39,8 +39,8 @@ public abstract class PaymentIntegrationTestBase : IntegrationTestBase
         services.AddSingleton<IPaymentGateway>(_paymentGateway);
         services.AddLogging();
 
-        services.AddMediatR(configuration =>
-            configuration.RegisterServicesFromAssembly(typeof(PaymentModule).Assembly));
+        services.AddMediator(options =>
+            options.ServiceLifetime = ServiceLifetime.Scoped);
 
         services.AddValidatorsFromAssembly(typeof(PaymentModule).Assembly, includeInternalTypes: true);
     }

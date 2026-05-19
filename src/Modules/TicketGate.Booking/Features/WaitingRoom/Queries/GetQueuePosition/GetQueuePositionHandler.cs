@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using StackExchange.Redis;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -9,14 +9,14 @@ namespace TicketGate.Booking.Features.WaitingRoom.Queries.GetQueuePosition;
 /// Kullanicinin waiting room'daki pozisyonunu doner.
 /// Redis ZRANK ile O(log N) sorgu yapar; kullanici kuyrukta degilse 404 doner.
 /// </summary>
-internal sealed class GetQueuePositionHandler(IConnectionMultiplexer redis)
+public sealed class GetQueuePositionHandler(IConnectionMultiplexer redis)
     : IRequestHandler<GetQueuePositionQuery, Result<QueuePositionDto>>
 {
     /// <summary>
     /// ZRANK ile pozisyon, ZCARD ile toplam kuyruk buyuklugu alinir.
     /// ZRANK 0-indexed doner; kullaniciya +1 ile gosterilir.
     /// </summary>
-    public async Task<Result<QueuePositionDto>> Handle(
+    public async ValueTask<Result<QueuePositionDto>> Handle(
         GetQueuePositionQuery request,
         CancellationToken cancellationToken)
     {

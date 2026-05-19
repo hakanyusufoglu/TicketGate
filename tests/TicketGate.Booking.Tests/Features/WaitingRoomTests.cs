@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -221,14 +221,14 @@ public sealed class WaitingRoomTests : BookingIntegrationTestBase
     }
 
     /// <summary>
-    /// Request'i yeni DI scope icinde MediatR ile gonderir.
+    /// Request'i yeni DI scope icinde Mediator ile gonderir.
     /// Handler testleri production request scope davranisina yakin calisir.
     /// </summary>
     private async Task<TicketGate.Core.Results.Result<TResponse>> SendScopedAsync<TResponse>(
         IRequest<TicketGate.Core.Results.Result<TResponse>> request)
     {
         using var scope = Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<IMediator>();
         return await sender.Send(request);
     }
 
@@ -240,7 +240,7 @@ public sealed class WaitingRoomTests : BookingIntegrationTestBase
         IRequest<TicketGate.Core.Results.Result> request)
     {
         using var scope = Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<IMediator>();
         return await sender.Send(request);
     }
 

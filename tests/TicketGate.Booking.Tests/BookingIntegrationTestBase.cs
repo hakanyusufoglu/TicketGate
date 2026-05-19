@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,7 +17,7 @@ namespace TicketGate.Booking.Tests;
 public abstract class BookingIntegrationTestBase : IntegrationTestBase
 {
     /// <summary>
-    /// Booking testleri icin DbContext, Redis, MediatR ve validator kayitlarini kurar.
+    /// Booking testleri icin DbContext, Redis, Mediator ve validator kayitlarini kurar.
     /// Handler testleri production module registration'a bagimli kalmadan gercek altyapi uzerinde calisir.
     /// </summary>
     protected override void ConfigureServices(IServiceCollection services)
@@ -35,11 +35,8 @@ public abstract class BookingIntegrationTestBase : IntegrationTestBase
 
         services.AddLogging();
 
-        services.AddMediatR(configuration =>
-        {
-            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly);
-            configuration.RegisterServicesFromAssembly(typeof(BookingIntegrationTestBase).Assembly);
-        });
+        services.AddMediator(options =>
+            options.ServiceLifetime = ServiceLifetime.Scoped);
 
         services.AddValidatorsFromAssembly(typeof(BookingModule).Assembly, includeInternalTypes: true);
     }

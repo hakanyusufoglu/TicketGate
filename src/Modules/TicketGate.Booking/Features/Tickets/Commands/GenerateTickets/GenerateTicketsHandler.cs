@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Domain.Entities;
 using TicketGate.Booking.Infrastructure.Persistence;
@@ -12,14 +12,14 @@ namespace TicketGate.Booking.Features.Tickets.Commands.GenerateTickets;
 /// Her section, row ve seat icin Ticket.Create cagrilir; fiyat ilgili section'dan alinir.
 /// Daha once generate edilmisse 409 doner; komut idempotent degildir.
 /// </summary>
-internal sealed class GenerateTicketsHandler(BookingDbContext db)
+public sealed class GenerateTicketsHandler(BookingDbContext db)
     : IRequestHandler<GenerateTicketsCommand, Result<GenerateTicketsResponse>>
 {
     /// <summary>
     /// Akis: daha once generate edildi mi kontrol eder, SeatMap uzerinden ticket listesi olusturur ve bulk insert yapar.
     /// Tekrar generate race condition riski unique index olmadigi icin ileride DB constraint ile guclendirilmelidir.
     /// </summary>
-    public async Task<Result<GenerateTicketsResponse>> Handle(
+    public async ValueTask<Result<GenerateTicketsResponse>> Handle(
         GenerateTicketsCommand request,
         CancellationToken cancellationToken)
     {

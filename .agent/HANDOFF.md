@@ -1,4 +1,38 @@
-﻿## SON HANDOFF - 2026-05-19 Smoke Test + E2E
+﻿## SON HANDOFF - 2026-05-19 MediatR -> Mediator MIT Migration
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; mevcut gorevin MediatR'i MIT lisansli Mediator ile degistirmek oldugu dogrulandi.
+- Tum `MediatR` package reference'lari kaldirildi.
+- Library/modul projelerine `Mediator.Abstractions`, API ve integration test host projelerine `Mediator.SourceGenerator` eklendi.
+- `using MediatR` namespace'leri `using Mediator` olarak degistirildi.
+- `ISender` endpoint injection'lari `IMediator` ile degistirildi.
+- `IPublisher` kullanan handler ve worker akislarinda `IMediator.Publish` kullanildi.
+- `AddMediatR` ve `AddOpenBehavior` kaldirildi; API/test host'larinda `AddMediator(options => options.ServiceLifetime = ServiceLifetime.Scoped)` kullanildi.
+- `ValidationBehavior<,>` Mediator `IPipelineBehavior` sozlesmesine gore `ValueTask`, `MessageHandlerDelegate<TRequest,TResponse>` ve `IMessage` constraint'iyle guncellendi.
+- Tum request/notification handler'lar public sealed hale getirildi ve Mediator'in `ValueTask` tabanli `Handle` imzasina tasindi.
+- AGENTS.md stack ve yasak pratikler Mediator MIT kararina gore guncellendi.
+- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` README hazirligi siradaki aktif gorev olacak sekilde guncellendi.
+
+### Dogrulama
+- `dotnet restore TicketGate.sln`: basarili; mevcut transitive NuGet security/pruning uyarilari devam ediyor.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili; 0 hata. Mediator source generator handler'siz notification contract'lari icin MSG0005 uyarilari verdi.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili; Booking 29/29, Event 13/13, Identity 10/10, Payment 18/18, Notification 3/3, API 3/3.
+
+### Dikkat
+- Kullanici `commit atma` dedi; commit/stage/push yapilmadi.
+- NuGet paket adi promptta "Mediator" olarak yazilsa da aktif source-generator kutuphane NuGet'te `Mediator.SourceGenerator` + `Mediator.Abstractions` paketleriyle kullaniliyor.
+- Mediator source generator uyari olarak handler'i olmayan bazi notification contract'larini bildiriyor; build hata vermiyor.
+- Mevcut Azure.Identity/System.Drawing.Common/System.IdentityModel transitive vulnerability uyarilari bu session kapsaminda cozulmedi.
+
+### Siradaki Gorev
+README hazırlığı
+
+---
+## SON HANDOFF - 2026-05-19 Smoke Test + E2E
 
 ### Proje
 TicketGate - bilet satis platformu

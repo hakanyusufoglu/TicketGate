@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Core.Errors;
@@ -120,7 +120,7 @@ public sealed class RefundPaymentTests : PaymentIntegrationTestBase
     private async Task<TicketGate.Core.Results.Result> SendScopedAsync(RefundPaymentCommand command)
     {
         await using var scope = Services.CreateAsyncScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<IMediator>();
         return await sender.Send(command);
     }
 }

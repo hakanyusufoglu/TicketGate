@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -11,14 +11,14 @@ namespace TicketGate.Event.Features.Events.Commands.UpdateEvent;
 /// Draft event guncelleme komutunu isler.
 /// EF Core tracking ile entity state degisir ve basarili kayit sonrasi event detail cache'i temizlenir.
 /// </summary>
-internal sealed class UpdateEventHandler(EventDbContext db, IEventCacheService cacheService)
+public sealed class UpdateEventHandler(EventDbContext db, IEventCacheService cacheService)
     : IRequestHandler<UpdateEventCommand, Result>
 {
     /// <summary>
     /// Event'i tracked sorguyla yukler, published kontrolunu yapar ve guncelleme sonrasi stale cache kaydini siler.
     /// Command handler tracking gerektirdigi icin AsNoTracking kullanmaz.
     /// </summary>
-    public async Task<Result> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
     {
         var eventEntity = await db.Events
             .FirstOrDefaultAsync(existingEvent => existingEvent.Id == request.Id, cancellationToken);

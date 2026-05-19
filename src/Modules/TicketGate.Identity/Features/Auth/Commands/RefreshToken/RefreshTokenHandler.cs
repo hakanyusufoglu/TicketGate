@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -18,7 +18,7 @@ namespace TicketGate.Identity.Features.Auth.Commands.RefreshToken;
 public sealed class RefreshTokenHandler(IdentityDbContext db, IOptions<JwtSettings> jwtOptions)
     : IRequestHandler<RefreshTokenCommand, Result<LoginUserResponse>>
 {
-    public async Task<Result<LoginUserResponse>> Handle(
+    public async ValueTask<Result<LoginUserResponse>> Handle(
         RefreshTokenCommand request,
         CancellationToken cancellationToken)
     {

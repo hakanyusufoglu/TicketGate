@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -31,12 +31,12 @@ public static class TicketEndpoints
 
         group.MapPost("/tickets/{id:guid}/reserve", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new ReserveTicketCommand(id, userId), cancellationToken);
+            var result = await mediator.Send(new ReserveTicketCommand(id, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("ReserveTicket")
@@ -57,12 +57,12 @@ public static class TicketEndpoints
 
         group.MapPost("/tickets/{id:guid}/cancel", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new CancelTicketCommand(id, userId), cancellationToken);
+            var result = await mediator.Send(new CancelTicketCommand(id, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
         })
             .WithName("CancelTicket")
@@ -82,10 +82,10 @@ public static class TicketEndpoints
 
         group.MapGet("/tickets/{id:guid}", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new GetTicketByIdQuery(id), cancellationToken);
+            var result = await mediator.Send(new GetTicketByIdQuery(id), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetTicketById")
@@ -100,10 +100,10 @@ public static class TicketEndpoints
 
         group.MapGet("/events/{id:guid}/seats", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new GetAvailableSeatsQuery(id), cancellationToken);
+            var result = await mediator.Send(new GetAvailableSeatsQuery(id), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetAvailableSeats")
@@ -118,7 +118,7 @@ public static class TicketEndpoints
         group.MapPost("/events/{id:guid}/tickets/generate", async (
             Guid id,
             IEventSeatMapReader seatMapReader,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
             var seatMapResult = await seatMapReader.GetSeatMapByEventIdAsync(id, cancellationToken);
@@ -127,7 +127,7 @@ public static class TicketEndpoints
                 return Result<GenerateTicketsResponse>.Fail(seatMapResult.Error!).ToHttpResult(StatusCodes.Status201Created);
             }
 
-            var result = await sender.Send(new GenerateTicketsCommand(id, seatMapResult.Value!), cancellationToken);
+            var result = await mediator.Send(new GenerateTicketsCommand(id, seatMapResult.Value!), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("GenerateTickets")

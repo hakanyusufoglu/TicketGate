@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Contracts;
 using TicketGate.Core.Errors;
@@ -15,7 +15,7 @@ namespace TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
 /// Handler CLI, worker ve test ortamindan cagrilabilir. Payment ve OutboxMessage tek transaction'da atomik yazilir.
 /// Stripe veya PayPal burada cagrilmaz.
 /// </summary>
-internal sealed class InitiatePaymentHandler(
+public sealed class InitiatePaymentHandler(
     PaymentDbContext db,
     ITicketReservationReader ticketReservationReader)
     : IRequestHandler<InitiatePaymentCommand, Result<InitiatePaymentResponse>>
@@ -24,7 +24,7 @@ internal sealed class InitiatePaymentHandler(
     /// Command UserId okuma, idempotency kontrolu, reserved ticket sahipligi ve atomik Payment + Outbox yazimini yurutur.
     /// Amount client body yerine ticket fiyatindan hesaplanarak manipulasyon engellenir.
     /// </summary>
-    public async Task<Result<InitiatePaymentResponse>> Handle(
+    public async ValueTask<Result<InitiatePaymentResponse>> Handle(
         InitiatePaymentCommand request,
         CancellationToken cancellationToken)
     {

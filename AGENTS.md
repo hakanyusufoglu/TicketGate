@@ -9,7 +9,7 @@ Linux ortamında Docker Compose ile çalışır. Ocelot API Gateway üzerinden d
 ## Stack
 - .NET 10 (LTS) · Minimal API · C# 14
 - PostgreSQL 16 + EF Core 10 (Npgsql) · snake_case naming convention
-- MediatR 12 · FluentValidation 11
+- Mediator (MIT) · FluentValidation 11
 - StackExchange.Redis (Lock + SortedSet + Pub/Sub)
 - Ocelot API Gateway (rate limit, auth, routing, load balance config)
 - Debezium + Kafka (CDC → Elasticsearch log pipeline)
@@ -69,7 +69,7 @@ Tüm dış trafik Gateway üzerinden geçer.
 
 ### Genel
 - Vertical Slice Architecture — her feature kendi klasöründe yaşar
-- CQRS via MediatR — Command (yazar) / Query (okur) kesin ayrımı
+- CQRS via Mediator — Command (yazar) / Query (okur) kesin ayrımı
 - Repository pattern YASAK — DbContext handler içinde direkt kullanılır
 - AutoMapper YASAK — `.Select()` projection kullan
 - Exception fırlatma YASAK — `Result<T>` döndür
@@ -82,7 +82,7 @@ Tüm dış trafik Gateway üzerinden geçer.
 
 ### Modüller arası iletişim
 - Direkt proje referansı YASAK — modüller birbirini import etmez
-- İletişim: `MediatR INotification` (domain event) üzerinden
+- İletişim: `Mediator INotification` (domain event) üzerinden
 - Gelecekte Kafka'ya taşınabilir olacak şekilde interface arkasında tutulur
 
 ### Her modülün kendi
@@ -102,8 +102,8 @@ Tüm dış trafik Gateway üzerinden geçer.
 - Her request'te CorrelationId bulunur (X-Correlation-Id header)
 - Hassas veri (şifre, token, kart no) loglarda YASAK
 
-### MediatR pipeline kaydı
-- `AddOpenBehavior(typeof(ValidationBehavior<,>))` yalnızca bir kez merkezi olarak kaydedilir
+### Mediator pipeline kaydı
+- `ValidationBehavior<,>` yalnızca bir kez merkezi olarak kaydedilir
 - Her modülde tekrar kaydetme — duplicate validation pipeline oluşur
 
 ---
@@ -267,7 +267,9 @@ Session'ı kapat, dosyaları güncelle, yeni session aç.
 ❌ Serilog string interpolation ile log yazmak
 ❌ Hassas veri loglara yazmak
 ❌ TicketGate.API'yi dışarıya port expose etmek
-❌ Her modülde AddOpenBehavior tekrar kaydetmek
+❌ Her modülde validation pipeline tekrar kaydetmek
+❌ MediatR kullanmak (ücretli lisans)
+✅ Mediator kullanmak (MIT lisans)
 ```
 
 ---

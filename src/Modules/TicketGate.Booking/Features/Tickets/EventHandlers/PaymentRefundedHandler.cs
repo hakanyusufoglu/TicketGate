@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Core.Events;
@@ -13,14 +13,14 @@ namespace TicketGate.Booking.Features.Tickets.EventHandlers;
 /// </summary>
 public sealed class PaymentRefundedHandler(
     BookingDbContext db,
-    IPublisher publisher) : INotificationHandler<PaymentRefunded>
+    IMediator mediator) : INotificationHandler<PaymentRefunded>
 {
     /// <summary>
     /// Ticket Confirmed durumundaysa ReleaseAfterRefund() ile Available yapar.
     /// TicketReleased event'i publish edilerek SSE/notification fan-out akisi tetiklenir.
     /// Ticket bulunamazsa veya Confirmed degilse idempotent sekilde sessizce cikar.
     /// </summary>
-    public async Task Handle(PaymentRefunded notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(PaymentRefunded notification, CancellationToken cancellationToken)
     {
         var ticket = await db.Tickets.FirstOrDefaultAsync(
             item => item.Id == notification.TicketId,
@@ -34,7 +34,7 @@ public sealed class PaymentRefundedHandler(
         ticket.ReleaseAfterRefund();
         await db.SaveChangesAsync(cancellationToken);
 
-        await publisher.Publish(
+        await mediator.Publish(
             new TicketReleased(ticket.Id, ticket.EventId, notification.UserId),
             cancellationToken);
     }

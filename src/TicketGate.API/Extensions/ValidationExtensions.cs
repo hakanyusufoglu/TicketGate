@@ -11,7 +11,7 @@ public static class ValidationExtensions
 {
     /// <summary>
     /// MVC model state filtresini kapatarak validation hatalarinin Result pipeline'i ile donmesini saglar.
-    /// Minimal API ve MediatR FluentValidation davranisi ayni hata formatini korur.
+    /// Minimal API ve Mediator FluentValidation davranisi ayni hata formatini korur.
     /// </summary>
     public static IServiceCollection AddTicketGateValidation(
         this IServiceCollection services)

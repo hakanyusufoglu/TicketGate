@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using TicketGate.Core.Events;
@@ -9,7 +9,7 @@ namespace TicketGate.Notification.Infrastructure;
 
 /// <summary>
 /// Entegrasyon event'lerini Redis Pub/Sub kanallarina yayinlar.
-/// MediatR INotificationHandler olarak calisir ve SSE endpoint'leri bu kanallari dinleyerek client'a iletir.
+/// Mediator INotificationHandler olarak calisir ve SSE endpoint'leri bu kanallari dinleyerek client'a iletir.
 /// Her event icin payload tipi sabit tutulur; publish hatalari loglanir ve event akisinin geri kalanini dusurmez.
 /// </summary>
 public sealed class SsePublisher(
@@ -28,7 +28,7 @@ public sealed class SsePublisher(
     /// Bilet rezerve edildiginde seat_status_changed payload'u yayinlar.
     /// Redis Pub/Sub fan-out coklu API instance senaryosunda tum ilgili SSE baglantilarina ulasir.
     /// </summary>
-    public async Task Handle(TicketReserved notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TicketReserved notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new
@@ -46,7 +46,7 @@ public sealed class SsePublisher(
     /// Bilet serbest birakildiginda seat_status_changed payload'u yayinlar.
     /// TTL expire, odeme basarisizligi ve iade akislarinda koltuk UI'i tekrar available durumuna cekilir.
     /// </summary>
-    public async Task Handle(TicketReleased notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TicketReleased notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new
@@ -63,7 +63,7 @@ public sealed class SsePublisher(
     /// Bilet onaylandiginda seat_status_changed payload'u yayinlar.
     /// Odeme bildirimi PaymentCompleted event'inden uretildigi icin kullaniciya cift payment_confirmed gonderilmez.
     /// </summary>
-    public async Task Handle(TicketConfirmed notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TicketConfirmed notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new
@@ -80,7 +80,7 @@ public sealed class SsePublisher(
     /// Waiting room sirasi gelen kullaniciya your_turn payload'u yayinlar.
     /// Kullaniciya ozel kanal kullanildigi icin sira bilgisi baska kullanicilara acilmaz.
     /// </summary>
-    public async Task Handle(QueueTurnGranted notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(QueueTurnGranted notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new
@@ -98,7 +98,7 @@ public sealed class SsePublisher(
     /// Kuyruga giren kullaniciya queue_position payload'u yayinlar.
     /// Toplam kuyruk uzunlugu Redis Sorted Set'ten okunur; Pub/Sub mesaji kalici olmadigi icin sadece anlik UI guncellemesi saglar.
     /// </summary>
-    public async Task Handle(UserJoinedQueue notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserJoinedQueue notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var db = redis.GetDatabase();
@@ -115,7 +115,7 @@ public sealed class SsePublisher(
     /// Waiting room sirasi degisen kullaniciya queue_position payload'u yayinlar.
     /// Dispatcher her turdan sonra kalan kullanicilar icin bu event'i uretir.
     /// </summary>
-    public async Task Handle(QueuePositionChanged notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(QueuePositionChanged notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await PublishPositionAsync(
@@ -130,7 +130,7 @@ public sealed class SsePublisher(
     /// Odeme tamamlandiginda kullaniciya payment_confirmed payload'u yayinlar.
     /// PaymentCompleted entegrasyon event'i kaynak kabul edilir; bilet onay event'i ayrica odeme bildirimi uretmez.
     /// </summary>
-    public async Task Handle(PaymentCompleted notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(PaymentCompleted notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new

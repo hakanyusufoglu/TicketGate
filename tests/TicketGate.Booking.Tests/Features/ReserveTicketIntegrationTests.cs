@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -138,10 +138,10 @@ public sealed class ReserveTicketIntegrationTests : BookingIntegrationTestBase
         services.AddSingleton(redis);
         services.AddSingleton(Options.Create(new BookingSettings()));
         services.AddLogging();
-        services.AddMediatR(configuration =>
-            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly));
+        services.AddMediator(options =>
+            options.ServiceLifetime = ServiceLifetime.Scoped);
         await using var provider = services.BuildServiceProvider();
-        var sender = provider.GetRequiredService<ISender>();
+        var sender = provider.GetRequiredService<IMediator>();
 
         var result = await sender.Send(new ReserveTicketCommand(ticketId, userId), CancellationToken.None);
 
@@ -176,7 +176,7 @@ public sealed class ReserveTicketIntegrationTests : BookingIntegrationTestBase
         ReserveTicketCommand command)
     {
         using var scope = Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<IMediator>();
         return await sender.Send(command);
     }
 

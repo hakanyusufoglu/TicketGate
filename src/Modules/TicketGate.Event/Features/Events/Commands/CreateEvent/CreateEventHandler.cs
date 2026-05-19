@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -6,9 +6,9 @@ using TicketGate.Event.Infrastructure.Persistence;
 
 namespace TicketGate.Event.Features.Events.Commands.CreateEvent;
 
-internal sealed class CreateEventHandler(EventDbContext db) : IRequestHandler<CreateEventCommand, Result<Guid>>
+public sealed class CreateEventHandler(EventDbContext db) : IRequestHandler<CreateEventCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result<Guid>> Handle(CreateEventCommand request, CancellationToken cancellationToken)
     {
         var venueExists = await db.Venues
             .AnyAsync(venue => venue.Id == request.VenueId, cancellationToken);

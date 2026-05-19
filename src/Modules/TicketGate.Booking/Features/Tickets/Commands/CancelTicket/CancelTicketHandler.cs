@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Core.Events;
@@ -12,15 +12,15 @@ namespace TicketGate.Booking.Features.Tickets.Commands.CancelTicket;
 /// Bileti iptal eder. Confirmed durumundan Cancelled durumuna gecis yapar.
 /// TicketCancelled event'i yayinlanir; odeme iadesi Payment modulu tarafindan islenir.
 /// </summary>
-internal sealed class CancelTicketHandler(
+public sealed class CancelTicketHandler(
     BookingDbContext db,
-    IPublisher publisher) : IRequestHandler<CancelTicketCommand, Result>
+    IMediator mediator) : IRequestHandler<CancelTicketCommand, Result>
 {
     /// <summary>
     /// Iptal akisinda biletin varligini, Confirmed durumunu ve bilet sahibi bilgisini kontrol eder.
     /// xmin concurrency token ayni bilete es zamanli iptal veya guncelleme cakismasini 409'a cevirir.
     /// </summary>
-    public async Task<Result> Handle(CancelTicketCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(CancelTicketCommand request, CancellationToken cancellationToken)
     {
         var ticket = await db.Tickets.SingleOrDefaultAsync(
             item => item.Id == request.TicketId,
@@ -49,7 +49,7 @@ internal sealed class CancelTicketHandler(
         {
             ticket.Cancel();
             await db.SaveChangesAsync(cancellationToken);
-            await publisher.Publish(new TicketCancelled(ticket.Id, ticket.EventId, request.UserId), cancellationToken);
+            await mediator.Publish(new TicketCancelled(ticket.Id, ticket.EventId, request.UserId), cancellationToken);
             return Result.Ok();
         }
         catch (DbUpdateConcurrencyException)

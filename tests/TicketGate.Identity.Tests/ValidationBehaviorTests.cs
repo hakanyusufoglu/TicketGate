@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using Mediator;
 using TicketGate.Core.Behaviors;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -19,7 +19,7 @@ public sealed class ValidationBehaviorTests
 
         var result = await behavior.Handle(
             new CreateIdentityCommand(""),
-            _ => Task.FromResult(Result<string>.Ok("created")),
+            (_, _) => ValueTask.FromResult(Result<string>.Ok("created")),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -36,10 +36,10 @@ public sealed class ValidationBehaviorTests
 
         var result = await behavior.Handle(
             new CreateIdentityCommand("identity"),
-            _ =>
+            (_, _) =>
             {
                 nextCalled = true;
-                return Task.FromResult(Result<string>.Ok("created"));
+                return ValueTask.FromResult(Result<string>.Ok("created"));
             },
             CancellationToken.None);
 

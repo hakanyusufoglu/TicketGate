@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Core.Errors;
@@ -10,14 +10,14 @@ namespace TicketGate.Booking.Features.Tickets.Queries.GetTicketById;
 /// Id ile tekil bilet sorgular. AsNoTracking ve Select projection kullanilir.
 /// Entity tracking acilmadan yalnizca HTTP yaniti icin gereken kolonlar okunur.
 /// </summary>
-internal sealed class GetTicketByIdHandler(BookingDbContext db)
+public sealed class GetTicketByIdHandler(BookingDbContext db)
     : IRequestHandler<GetTicketByIdQuery, Result<TicketDetailDto>>
 {
     /// <summary>
     /// Bilet detayini projection ile okur ve yoksa 404 doner.
     /// Query handler validator kullanmaz; bos Guid sonucu dogal olarak NotFound'a duser.
     /// </summary>
-    public async Task<Result<TicketDetailDto>> Handle(
+    public async ValueTask<Result<TicketDetailDto>> Handle(
         GetTicketByIdQuery request,
         CancellationToken cancellationToken)
     {

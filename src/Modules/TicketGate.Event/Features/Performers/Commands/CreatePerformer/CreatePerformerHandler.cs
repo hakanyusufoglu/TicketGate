@@ -1,14 +1,14 @@
-using MediatR;
+using Mediator;
 using TicketGate.Core.Results;
 using TicketGate.Event.Domain.Entities;
 using TicketGate.Event.Infrastructure.Persistence;
 
 namespace TicketGate.Event.Features.Performers.Commands.CreatePerformer;
 
-internal sealed class CreatePerformerHandler(EventDbContext db)
+public sealed class CreatePerformerHandler(EventDbContext db)
     : IRequestHandler<CreatePerformerCommand, Result<Guid>>
 {
-    public async Task<Result<Guid>> Handle(
+    public async ValueTask<Result<Guid>> Handle(
         CreatePerformerCommand request,
         CancellationToken cancellationToken)
     {

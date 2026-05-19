@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using Mediator;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
 
@@ -8,18 +8,18 @@ namespace TicketGate.Core.Behaviors;
 public sealed class ValidationBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : IMessage
 {
-    public async Task<TResponse> Handle(
+    public async ValueTask<TResponse> Handle(
         TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken)
     {
         var validatorList = validators as IReadOnlyCollection<IValidator<TRequest>> ?? validators.ToArray();
 
         if (validatorList.Count == 0)
         {
-            return await next(cancellationToken);
+            return await next(request, cancellationToken);
         }
 
         var context = new ValidationContext<TRequest>(request);
@@ -35,7 +35,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
 
         if (failures.Length == 0)
         {
-            return await next(cancellationToken);
+            return await next(request, cancellationToken);
         }
 
         var error = AppError.Validation("validation.failed", string.Join("; ", failures));

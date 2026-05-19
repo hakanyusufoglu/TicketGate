@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Mediator;
 using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -88,6 +89,9 @@ builder.Services.AddOutputCache(options =>
 });
 
 builder.Services.AddModules(builder.Configuration);
+builder.Services.AddMediator(options =>
+    options.ServiceLifetime = ServiceLifetime.Scoped);
+
 var app = builder.Build();
 app.UseResponseCompression();
 app.UseRouting();

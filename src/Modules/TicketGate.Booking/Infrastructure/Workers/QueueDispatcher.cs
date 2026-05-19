@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -150,8 +150,8 @@ public sealed class QueueDispatcher(
         if (Guid.TryParse(userId, out var parsedUserId))
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
-            await publisher.Publish(new QueueTurnGranted(eventId, parsedUserId, Position: 0), cancellationToken);
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+            await mediator.Publish(new QueueTurnGranted(eventId, parsedUserId, Position: 0), cancellationToken);
         }
     }
 
@@ -176,7 +176,7 @@ public sealed class QueueDispatcher(
         }
 
         await using var scope = scopeFactory.CreateAsyncScope();
-        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var batchSize = Math.Max(1, settings.Value.QueuePositionPublishBatchSize);
         var batchDelay = TimeSpan.FromMilliseconds(Math.Max(0, settings.Value.QueuePositionPublishDelayMilliseconds));
         long start = 0;
@@ -205,7 +205,7 @@ public sealed class QueueDispatcher(
 
                 try
                 {
-                    await publisher.Publish(
+                    await mediator.Publish(
                         new QueuePositionChanged(eventId, parsedUserId, Position: start + index + 1, Total: total),
                         cancellationToken);
                 }

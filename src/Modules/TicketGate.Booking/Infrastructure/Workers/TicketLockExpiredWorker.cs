@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -109,7 +109,7 @@ public sealed class TicketLockExpiredWorker(
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
-            var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
             var ticket = await db.Tickets
                 .FirstOrDefaultAsync(item => item.Id == ticketId, cancellationToken);
@@ -124,7 +124,7 @@ public sealed class TicketLockExpiredWorker(
             await db.SaveChangesAsync(cancellationToken);
             TicketGateMetrics.DecrementActiveLocks();
 
-            await publisher.Publish(
+            await mediator.Publish(
                 new TicketReleased(ticket.Id, ticket.EventId, lockedByUserId),
                 cancellationToken);
 

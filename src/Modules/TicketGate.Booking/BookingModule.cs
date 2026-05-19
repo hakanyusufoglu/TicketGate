@@ -17,7 +17,7 @@ namespace TicketGate.Booking;
 
 /// <summary>
 /// Booking modulu kayit sinifi. IModule implementasyonu ile Program.cs'e dokunmadan sisteme dahil olur.
-/// Redis baglantisi, DbContext ve validator kayitlari burada yapilir; MediatR merkezi module discovery tarafindan kaydedilir.
+/// Redis baglantisi, DbContext ve validator kayitlari burada yapilir; Mediator merkezi module discovery tarafindan kaydedilir.
 /// </summary>
 public sealed class BookingModule : IModule
 {

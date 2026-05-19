@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -11,14 +11,14 @@ namespace TicketGate.Event.Features.Events.Queries.GetEventById;
 /// Event detay sorgusunu cache-aside pattern ile yurutur.
 /// Once Redis cache okunur; cache miss durumunda projection-first EF Core sorgusu calisir.
 /// </summary>
-internal sealed class GetEventByIdHandler(EventDbContext db, IEventCacheService cacheService)
+public sealed class GetEventByIdHandler(EventDbContext db, IEventCacheService cacheService)
     : IRequestHandler<GetEventByIdQuery, Result<EventDetailDto>>
 {
     /// <summary>
     /// Event detayini Redis cache veya Postgres projection sorgusundan dondurur.
     /// Query handler AsNoTracking kullanir ve cache hatalarinda DB fallback davranisini korur.
     /// </summary>
-    public async Task<Result<EventDetailDto>> Handle(
+    public async ValueTask<Result<EventDetailDto>> Handle(
         GetEventByIdQuery request,
         CancellationToken cancellationToken)
     {

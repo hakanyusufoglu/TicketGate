@@ -16,7 +16,7 @@ public sealed class NotificationModule : IModule
 {
     /// <summary>
     /// Notification servislerini DI container'a kaydeder.
-    /// MediatR handler kaydi merkezi AddModules tarafindan yapildigi icin burada duplicate pipeline eklenmez.
+    /// Mediator handler kaydi merkezi AddModules tarafindan yapildigi icin burada duplicate pipeline eklenmez.
     /// </summary>
     public void RegisterServices(IServiceCollection services, IConfiguration config)
     {

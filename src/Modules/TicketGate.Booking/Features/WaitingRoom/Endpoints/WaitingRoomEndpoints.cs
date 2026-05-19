@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,12 +27,12 @@ public static class WaitingRoomEndpoints
 
         group.MapPost("/{eventId:guid}/join", async (
             Guid eventId,
-            [FromServices] ISender sender,
+            [FromServices] IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new JoinQueueCommand(eventId, userId), cancellationToken);
+            var result = await mediator.Send(new JoinQueueCommand(eventId, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("JoinQueue")
@@ -50,12 +50,12 @@ public static class WaitingRoomEndpoints
 
         group.MapGet("/{eventId:guid}/position", async (
             Guid eventId,
-            [FromServices] ISender sender,
+            [FromServices] IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new GetQueuePositionQuery(eventId, userId), cancellationToken);
+            var result = await mediator.Send(new GetQueuePositionQuery(eventId, userId), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetQueuePosition")
@@ -72,12 +72,12 @@ public static class WaitingRoomEndpoints
 
         group.MapDelete("/{eventId:guid}/leave", async (
             Guid eventId,
-            [FromServices] ISender sender,
+            [FromServices] IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new LeaveQueueCommand(eventId, userId), cancellationToken);
+            var result = await mediator.Send(new LeaveQueueCommand(eventId, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
         })
             .WithName("LeaveQueue")

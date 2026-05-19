@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -10,7 +10,7 @@ namespace TicketGate.Identity.Features.Auth.Commands.RegisterUser;
 public sealed class RegisterUserHandler(IdentityDbContext db)
     : IRequestHandler<RegisterUserCommand, Result<RegisterUserResponse>>
 {
-    public async Task<Result<RegisterUserResponse>> Handle(
+    public async ValueTask<Result<RegisterUserResponse>> Handle(
         RegisterUserCommand request,
         CancellationToken cancellationToken)
     {

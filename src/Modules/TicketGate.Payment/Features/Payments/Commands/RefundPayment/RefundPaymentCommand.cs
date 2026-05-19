@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Payment.Features.Payments.Commands.RefundPayment;

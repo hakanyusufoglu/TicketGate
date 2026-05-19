@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using StackExchange.Redis;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Metrics;
@@ -10,14 +10,14 @@ namespace TicketGate.Booking.Features.WaitingRoom.Commands.LeaveQueue;
 /// Kullaniciyi Redis Sorted Set'ten ZREM ile cikarir.
 /// Kullanici kuyruga girmemisse 404 donerek istemciye stale state bilgisini acik eder.
 /// </summary>
-internal sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
+public sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
     : IRequestHandler<LeaveQueueCommand, Result>
 {
     /// <summary>
     /// ZREM sonucundaki silinen eleman sayisini kontrol eder.
     /// Sifir sonuc kullanicinin bu event kuyrugunda olmadigini gosterir.
     /// </summary>
-    public async Task<Result> Handle(LeaveQueueCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(LeaveQueueCommand request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var db = redis.GetDatabase();

@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -10,14 +10,14 @@ namespace TicketGate.Payment.Features.Payments.Queries.GetPaymentById;
 /// Id ile tekil odeme sorgular.
 /// AsNoTracking ve Select projection kullanarak gereksiz entity tracking olusturmaz.
 /// </summary>
-internal sealed class GetPaymentByIdHandler(PaymentDbContext db)
+public sealed class GetPaymentByIdHandler(PaymentDbContext db)
     : IRequestHandler<GetPaymentByIdQuery, Result<PaymentDetailDto>>
 {
     /// <summary>
     /// Payment detayini projection ile okur ve bulunamazsa 404 doner.
     /// Query handler validator kullanmaz; yalnizca okuma akisini yurutur.
     /// </summary>
-    public async Task<Result<PaymentDetailDto>> Handle(
+    public async ValueTask<Result<PaymentDetailDto>> Handle(
         GetPaymentByIdQuery request,
         CancellationToken cancellationToken)
     {

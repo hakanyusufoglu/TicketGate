@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Core.Errors;
@@ -163,7 +163,7 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         InitiatePaymentCommand command)
     {
         using var scope = Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<IMediator>();
         return await sender.Send(command);
     }
 }

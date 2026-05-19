@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-Code review duzeltmeleri tamamlandi. Aktif görev: P18 Smoke Test + E2E.
+MediatR -> Mediator MIT migration tamamlandi. Aktif görev: README hazırlığı.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## Sıradaki Prompt
-P18 Smoke Test + E2E
+README hazırlığı
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -33,6 +33,9 @@ P18 Smoke Test + E2E
 - Her yeni sÄ±nÄ±fa TÃ¼rkÃ§e XML summary zorunlu
 - Built-in RateLimiter (Ocelot yerine) â€” P17'de eklenecek
 - Testcontainers 3.x restore/build aÅŸamasÄ±nda transitive NuGet gÃ¼venlik uyarÄ±larÄ± Ã¼retiyor; ileride paket versiyonu veya major upgrade deÄŸerlendirilmeli
+
+## Son Tamamlanan Ara Gorev
+MediatR bagimliligi Mediator MIT stack'ine tasindi. Library projeleri `Mediator.Abstractions`, API ve integration test host'lari `Mediator.SourceGenerator` kullaniyor. Endpointlerde `IMediator.Send`, handler/worker event akislarinda `IMediator.Publish` kullaniliyor. Tum handler'lar public sealed ve Mediator `ValueTask` imzasina uyumlu. `dotnet restore`, `dotnet build --no-restore` ve `dotnet test --no-build -m:1` basarili; commit atilmadi.
 
 ## Son Tamamlanan Ara Gorev
 Seat map JSON yapisi typed Core SeatMap value object'ine tasindi. Event Venue jsonb persist'i converter ile guncellendi, Booking GenerateTickets slice'i eklendi ve POST /api/v1/events/{eventId}/tickets/generate endpoint'i Event seat map reader soyutlamasi uzerinden seat map okuyacak sekilde baglandi. Rezervasyon mekanizmasina dokunulmadi.

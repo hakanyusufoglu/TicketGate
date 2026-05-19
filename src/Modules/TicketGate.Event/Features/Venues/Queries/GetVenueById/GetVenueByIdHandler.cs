@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -6,10 +6,10 @@ using TicketGate.Event.Infrastructure.Persistence;
 
 namespace TicketGate.Event.Features.Venues.Queries.GetVenueById;
 
-internal sealed class GetVenueByIdHandler(EventDbContext db)
+public sealed class GetVenueByIdHandler(EventDbContext db)
     : IRequestHandler<GetVenueByIdQuery, Result<VenueDetailDto>>
 {
-    public async Task<Result<VenueDetailDto>> Handle(
+    public async ValueTask<Result<VenueDetailDto>> Handle(
         GetVenueByIdQuery request,
         CancellationToken cancellationToken)
     {

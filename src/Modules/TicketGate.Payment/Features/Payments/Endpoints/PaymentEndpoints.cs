@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,12 +27,12 @@ public static class PaymentEndpoints
 
         group.MapPost("/initiate", async (
             InitiatePaymentRequest request,
-            ISender sender,
+            IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new InitiatePaymentCommand(
+            var result = await mediator.Send(new InitiatePaymentCommand(
                 request.TicketId,
                 userId,
                 request.Provider,
@@ -57,12 +57,12 @@ public static class PaymentEndpoints
 
         group.MapPost("/{id:guid}/refund", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             var userId = context.GetUserId();
-            var result = await sender.Send(new RefundPaymentCommand(id, userId), cancellationToken);
+            var result = await mediator.Send(new RefundPaymentCommand(id, userId), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
         })
             .WithName("RefundPayment")
@@ -82,10 +82,10 @@ public static class PaymentEndpoints
 
         group.MapGet("/{id:guid}", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new GetPaymentByIdQuery(id), cancellationToken);
+            var result = await mediator.Send(new GetPaymentByIdQuery(id), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetPaymentById")

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Booking.Domain.Entities;
@@ -94,12 +94,12 @@ public sealed class PaymentRefundedHandlerTests : BookingIntegrationTestBase
 
     /// <summary>
     /// Event'i yeni DI scope icinde publish eder.
-    /// Production MediatR handler cozumuyle ayni davranisi kullanir.
+    /// Production Mediator handler cozumuyle ayni davranisi kullanir.
     /// </summary>
     private async Task PublishScopedAsync(PaymentRefunded notification)
     {
         await using var scope = Services.CreateAsyncScope();
-        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
-        await publisher.Publish(notification);
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Publish(notification);
     }
 }

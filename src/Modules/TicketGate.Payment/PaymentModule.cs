@@ -21,7 +21,7 @@ public sealed class PaymentModule : IModule
 {
     /// <summary>
     /// Payment DbContext, OutboxSettings, gateway soyutlamasi ve validator kayitlarini ekler.
-    /// MediatR merkezi module discovery tarafindan kaydedildigi icin burada tekrar pipeline eklenmez.
+    /// Mediator merkezi module discovery tarafindan kaydedildigi icin burada tekrar pipeline eklenmez.
     /// </summary>
     public void RegisterServices(IServiceCollection services, IConfiguration config)
     {

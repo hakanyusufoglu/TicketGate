@@ -1,5 +1,5 @@
 using System.Reflection;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,17 +20,7 @@ public static class ModuleExtensions
             module.RegisterServices(services, config);
         }
 
-        services.AddMediatR(configuration =>
-        {
-            foreach (var moduleAssembly in modules
-                .Select(module => module.GetType().Assembly)
-                .Distinct())
-            {
-                configuration.RegisterServicesFromAssembly(moduleAssembly);
-            }
-
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
-        });
+        services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }

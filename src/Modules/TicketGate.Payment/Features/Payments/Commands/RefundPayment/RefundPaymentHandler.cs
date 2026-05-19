@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -13,14 +13,14 @@ namespace TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 /// Iade talebini isler. Payment Completed olmalidir ve harici gateway bu handler'da cagrilmaz.
 /// Refund istegi OutboxMessage olarak yazilir; fiili iade OutboxWorker tarafindan tamamlanir.
 /// </summary>
-internal sealed class RefundPaymentHandler(PaymentDbContext db)
+public sealed class RefundPaymentHandler(PaymentDbContext db)
     : IRequestHandler<RefundPaymentCommand, Result>
 {
     /// <summary>
     /// Payment sahipligi ve Completed durumunu dogrular, refund talebini outbox'a yazar.
     /// Status hemen Refunded yapilmaz; harici gateway sonucu worker tarafindan dogrulanmalidir.
     /// </summary>
-    public async Task<Result> Handle(RefundPaymentCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(RefundPaymentCommand request, CancellationToken cancellationToken)
     {
         var payment = await db.Payments.SingleOrDefaultAsync(
             item => item.Id == request.PaymentId,

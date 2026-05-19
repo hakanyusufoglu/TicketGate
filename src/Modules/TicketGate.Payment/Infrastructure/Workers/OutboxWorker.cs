@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -58,7 +58,7 @@ public sealed class OutboxWorker(
         await using var scope = scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
         var gateway = scope.ServiceProvider.GetRequiredService<IPaymentGateway>();
-        var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var messages = await db.OutboxMessages
             .Where(message => message.ProcessedAt == null && message.RetryCount < _settings.MaxRetryCount)
@@ -68,7 +68,7 @@ public sealed class OutboxWorker(
 
         foreach (var message in messages)
         {
-            await ProcessMessageAsync(message, db, gateway, publisher, cancellationToken);
+            await ProcessMessageAsync(message, db, gateway, mediator, cancellationToken);
         }
 
         if (messages.Count > 0)
@@ -85,7 +85,7 @@ public sealed class OutboxWorker(
         OutboxMessage message,
         PaymentDbContext db,
         IPaymentGateway gateway,
-        IPublisher publisher,
+        IMediator mediator,
         CancellationToken cancellationToken)
     {
         var startedAt = Stopwatch.GetTimestamp();
@@ -95,10 +95,10 @@ public sealed class OutboxWorker(
             switch (message.Type)
             {
                 case OutboxMessageTypes.PaymentInitiated:
-                    await ProcessPaymentInitiatedAsync(message, db, gateway, publisher, cancellationToken);
+                    await ProcessPaymentInitiatedAsync(message, db, gateway, mediator, cancellationToken);
                     break;
                 case OutboxMessageTypes.PaymentRefundRequested:
-                    await ProcessRefundRequestedAsync(message, db, gateway, publisher, cancellationToken);
+                    await ProcessRefundRequestedAsync(message, db, gateway, mediator, cancellationToken);
                     break;
                 default:
                     message.MarkFailed($"Unsupported outbox message type '{message.Type}'.");
@@ -138,7 +138,7 @@ public sealed class OutboxWorker(
         OutboxMessage message,
         PaymentDbContext db,
         IPaymentGateway gateway,
-        IPublisher publisher,
+        IMediator mediator,
         CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Deserialize<PaymentInitiatedOutboxPayload>(message.Payload)
@@ -161,7 +161,7 @@ public sealed class OutboxWorker(
             payment?.Complete(result.Value!);
             message.MarkProcessed();
 
-            await publisher.Publish(
+            await mediator.Publish(
                 new PaymentCompleted(payload.PaymentId, payload.TicketId, payload.UserId),
                 cancellationToken);
 
@@ -178,7 +178,7 @@ public sealed class OutboxWorker(
             TicketGateMetrics.Payments.WithLabels("failed").Inc();
             TicketGateMetrics.OutboxDeadLetters.WithLabels(message.Type).Inc();
 
-            await publisher.Publish(
+            await mediator.Publish(
                 new PaymentFailed(payload.PaymentId, payload.TicketId, payload.UserId),
                 cancellationToken);
 
@@ -197,7 +197,7 @@ public sealed class OutboxWorker(
         OutboxMessage message,
         PaymentDbContext db,
         IPaymentGateway gateway,
-        IPublisher publisher,
+        IMediator mediator,
         CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Deserialize<RefundPaymentOutboxPayload>(message.Payload)
@@ -213,7 +213,7 @@ public sealed class OutboxWorker(
             payment?.Refund();
             message.MarkProcessed();
 
-            await publisher.Publish(
+            await mediator.Publish(
                 new PaymentRefunded(payload.PaymentId, payload.TicketId, payload.UserId),
                 cancellationToken);
 

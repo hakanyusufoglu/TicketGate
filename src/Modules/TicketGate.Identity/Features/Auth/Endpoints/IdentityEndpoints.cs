@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +19,7 @@ public static class IdentityEndpoints
 {
     /// <summary>
     /// Auth endpoint'lerini /api/v1/auth grubu altinda yayinlar.
-    /// Endpoint katmani yalnizca command'i MediatR'a iletir ve Result'i HTTP sonucuna cevirir.
+    /// Endpoint katmani yalnizca command'i Mediator'a iletir ve Result'i HTTP sonucuna cevirir.
     /// </summary>
     public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
     {
@@ -27,10 +27,10 @@ public static class IdentityEndpoints
 
         group.MapPost("/register", async (
             RegisterUserCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("RegisterUser")
@@ -46,10 +46,10 @@ public static class IdentityEndpoints
 
         group.MapPost("/login", async (
             LoginUserCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("LoginUser")
@@ -65,10 +65,10 @@ public static class IdentityEndpoints
 
         group.MapPost("/refresh", async (
             RefreshTokenCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("RefreshToken")

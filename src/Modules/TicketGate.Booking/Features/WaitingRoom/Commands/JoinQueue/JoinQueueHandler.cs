@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
@@ -13,16 +13,16 @@ namespace TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;
 /// Kapasite bos ise active checkout sayacini atomik artirip direkt gecis verir; doluysa Redis ZADD NX ile sirayi korur.
 /// NX flag ayni kullanicinin iki kez eklenmesini engeller ve ilk giris zamanini saklar.
 /// </summary>
-internal sealed class JoinQueueHandler(
+public sealed class JoinQueueHandler(
     IConnectionMultiplexer redis,
     IOptions<BookingSettings> settings,
-    IPublisher publisher) : IRequestHandler<JoinQueueCommand, Result<JoinQueueResponse>>
+    IMediator mediator) : IRequestHandler<JoinQueueCommand, Result<JoinQueueResponse>>
 {
     /// <summary>
     /// Akis: kapasite kontrolu, bos ise direkt grant, dolu ise ZADD NX, ZRANK ve UserJoinedQueue event.
     /// active_checkout:{eventId} sayaci MaxCheckoutCapacity ile karsilastirilir.
     /// </summary>
-    public async Task<Result<JoinQueueResponse>> Handle(
+    public async ValueTask<Result<JoinQueueResponse>> Handle(
         JoinQueueCommand request,
         CancellationToken cancellationToken)
     {
@@ -48,7 +48,7 @@ internal sealed class JoinQueueHandler(
         var rank = await db.SortedSetRankAsync(queueKey, request.UserId.ToString(), Order.Ascending);
         var position = (rank ?? 0) + 1;
 
-        await publisher.Publish(
+        await mediator.Publish(
             new UserJoinedQueue(request.EventId, request.UserId, position),
             cancellationToken);
 

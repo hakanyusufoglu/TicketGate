@@ -144,7 +144,7 @@
 
 - .NET 10 LTS · C# 14 · Minimal API
 - EF Core 10 · Npgsql · snake_case
-- MediatR 12 · FluentValidation 11
+- Mediator (MIT) · FluentValidation 11
 - PostgreSQL 16 · Redis 7 · Kafka 7.6
 - Debezium 2.6 · Elasticsearch 8.13 · Kibana
 - Prometheus · Grafana
@@ -402,3 +402,17 @@
 | 2026-05-19 | InitiatePayment UserId command'e tasindi | Handler HTTP context'e bagimli kalmadan test, CLI ve worker ortamindan cagrilabilmeli |
 | 2026-05-19 | ReserveTicket beklenmeyen DB hatasinda owned lock siliyor | Redis lock alindiktan sonra DB hatasi olursa ticket TTL boyunca ghost lock durumunda kalmamali |
 | 2026-05-19 | Queue position publish batch okuma kullaniyor | Waiting room Sorted Set'in tamamini bellege almak yuksek kuyruklarda OOM riski olusturur |
+
+## 2026-05-19 Mediator MIT Migration Notu
+
+- [x] MediatR -> Mediator migration tamamlandi.
+- [x] MIT lisansli Mediator bagimliligi kullaniliyor; library projelerinde `Mediator.Abstractions`, API/test host projelerinde `Mediator.SourceGenerator` var.
+- [x] `using MediatR` namespace'leri `using Mediator` olarak degistirildi.
+- [x] Endpointlerde `ISender`, handler ve worker publish akislarinda `IPublisher` yerine `IMediator` kullaniliyor.
+- [x] `AddMediatR` ve `AddOpenBehavior` kaldirildi; `AddMediator` host/test seviyesinde, `ValidationBehavior<,>` merkezi pipeline kaydi olarak tutuluyor.
+- [x] Tum Mediator request/notification handler'lari public sealed yapildi ve `ValueTask` tabanli `Handle` imzasina tasindi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-19 | Mediator source generator host projelerinde tutuldu | Generator `AddMediator` kaydini derleme zamaninda urettigi icin API ve integration test host'lari handler assembly'lerini gormeli; module library'lerinde yalnizca abstraction yeterli |
+| 2026-05-19 | ValidationBehavior `IMessage` constraint'i kullaniyor | Mediator `IPipelineBehavior<TMessage,TResponse>` sozlesmesi `TMessage : IMessage` istiyor; MediatR'daki `notnull` constraint'i derlenmiyor |

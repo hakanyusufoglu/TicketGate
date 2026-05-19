@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Pagination;
 using TicketGate.Core.Results;
@@ -6,10 +6,10 @@ using TicketGate.Event.Infrastructure.Persistence;
 
 namespace TicketGate.Event.Features.Events.Queries.GetEventList;
 
-internal sealed class GetEventListHandler(EventDbContext db)
+public sealed class GetEventListHandler(EventDbContext db)
     : IRequestHandler<GetEventListQuery, Result<PagedResult<EventListDto>>>
 {
-    public async Task<Result<PagedResult<EventListDto>>> Handle(
+    public async ValueTask<Result<PagedResult<EventListDto>>> Handle(
         GetEventListQuery request,
         CancellationToken cancellationToken)
     {

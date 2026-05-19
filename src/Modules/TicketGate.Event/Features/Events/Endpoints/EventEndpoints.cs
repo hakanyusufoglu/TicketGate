@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -36,10 +36,10 @@ public static class EventEndpoints
 
         group.MapPost("/events", async (
             CreateEventCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("CreateEvent")
@@ -56,10 +56,10 @@ public static class EventEndpoints
         group.MapPut("/events/{id:guid}", async (
             Guid id,
             UpdateEventRequest request,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(
+            var result = await mediator.Send(
                 new UpdateEventCommand(id, request.Name, request.Description, request.StartsAt, request.EndsAt),
                 cancellationToken);
 
@@ -77,10 +77,10 @@ public static class EventEndpoints
 
         group.MapPost("/events/{id:guid}/publish", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new PublishEventCommand(id), cancellationToken);
+            var result = await mediator.Send(new PublishEventCommand(id), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status204NoContent);
         })
             .WithName("PublishEvent")
@@ -95,10 +95,10 @@ public static class EventEndpoints
 
         group.MapGet("/events/{id:guid}", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new GetEventByIdQuery(id), cancellationToken);
+            var result = await mediator.Send(new GetEventByIdQuery(id), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetEventById")
@@ -112,7 +112,7 @@ public static class EventEndpoints
             .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapGet("/events", async (
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken,
             int page = 1,
             int pageSize = 20,
@@ -120,7 +120,7 @@ public static class EventEndpoints
             string? city = null,
             DateTime? startsAfter = null) =>
         {
-            var result = await sender.Send(
+            var result = await mediator.Send(
                 new GetEventListQuery(page, pageSize, search, city, startsAfter),
                 cancellationToken);
 
@@ -138,10 +138,10 @@ public static class EventEndpoints
 
         group.MapPost("/venues", async (
             CreateVenueCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("CreateVenue")
@@ -155,10 +155,10 @@ public static class EventEndpoints
 
         group.MapGet("/venues/{id:guid}", async (
             Guid id,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(new GetVenueByIdQuery(id), cancellationToken);
+            var result = await mediator.Send(new GetVenueByIdQuery(id), cancellationToken);
             return result.ToHttpResult();
         })
             .WithName("GetVenueById")
@@ -172,10 +172,10 @@ public static class EventEndpoints
 
         group.MapPost("/performers", async (
             CreatePerformerCommand command,
-            ISender sender,
+            IMediator mediator,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await mediator.Send(command, cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("CreatePerformer")

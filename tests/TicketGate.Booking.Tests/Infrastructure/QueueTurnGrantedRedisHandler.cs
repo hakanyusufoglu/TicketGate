@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MediatR;
+using Mediator;
 using StackExchange.Redis;
 using TicketGate.Core.Events;
 
@@ -19,9 +19,9 @@ public sealed class QueueTurnGrantedRedisHandler(IConnectionMultiplexer redis)
 
     /// <summary>
     /// QueueTurnGranted event'i geldigi anda kullaniciya ozel Redis kanalina your_turn payload'u yayinlar.
-    /// Dispatcher'in dogrudan Redis'e bagli kalmadigini, MediatR event siniri uzerinden calistigini test eder.
+    /// Dispatcher'in dogrudan Redis'e bagli kalmadigini, Mediator event siniri uzerinden calistigini test eder.
     /// </summary>
-    public async Task Handle(QueueTurnGranted notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(QueueTurnGranted notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new
@@ -41,7 +41,7 @@ public sealed class QueueTurnGrantedRedisHandler(IConnectionMultiplexer redis)
     /// QueuePositionChanged event'i geldigi anda kullaniciya ozel Redis kanalina queue_position payload'u yayinlar.
     /// Dispatcher turu sonrasi kalan kullanicilarin yeni sirasini test eder.
     /// </summary>
-    public async Task Handle(QueuePositionChanged notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(QueuePositionChanged notification, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var payload = JsonSerializer.Serialize(new

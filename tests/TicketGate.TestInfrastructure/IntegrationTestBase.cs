@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
@@ -30,10 +30,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected IServiceProvider Services { get; private set; } = default!;
 
     /// <summary>
-    /// MediatR sender erişimini modül integration testlerine sağlar.
-    /// Modül kendi MediatR kayıtlarını eklediğinde handler akışları doğrudan bu property üzerinden çağrılır.
+    /// Mediator sender erişimini modül integration testlerine sağlar.
+    /// Modül kendi Mediator kayıtlarını eklediğinde handler akışları doğrudan bu property üzerinden çağrılır.
     /// </summary>
-    protected ISender Sender => Services.GetRequiredService<ISender>();
+    protected IMediator Sender => Services.GetRequiredService<IMediator>();
 
     /// <summary>
     /// PostgreSQL container bağlantı bilgisini modül testlerine açar.
@@ -139,7 +139,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     /// <summary>
     /// Her test class'ının kendi servis konfigürasyonunu eklemesi için kullanılır.
-    /// DbContext, MediatR, validator ve modüle özel dış bağımlılıklar burada register edilir.
+    /// DbContext, Mediator, validator ve modüle özel dış bağımlılıklar burada register edilir.
     /// </summary>
     protected abstract void ConfigureServices(IServiceCollection services);
 

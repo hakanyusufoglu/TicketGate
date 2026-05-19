@@ -1,4 +1,4 @@
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,10 +18,10 @@ namespace TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 /// Ayni bilete es zamanli istek gelirse 409 doner.
 /// finally blogu ile basarisiz tum hata yollarinda owned lock temizlenir; ghost lock problemi engellenir.
 /// </summary>
-internal sealed class ReserveTicketHandler(
+public sealed class ReserveTicketHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
-    IPublisher publisher,
+    IMediator mediator,
     IOptions<BookingSettings> settings,
     ILogger<ReserveTicketHandler> logger) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
 {
@@ -29,7 +29,7 @@ internal sealed class ReserveTicketHandler(
     /// Rezervasyon akisini Redis lock, PostgreSQL state kontrolu, domain state gecisi ve event publish adimlariyla yurutur.
     /// Basarisiz olursa finally blogunda lock geri birakilir. Beklenmedik exception tipleri yakalanarak ghost lock engellenir.
     /// </summary>
-    public async Task<Result<ReserveTicketResponse>> Handle(
+    public async ValueTask<Result<ReserveTicketResponse>> Handle(
         ReserveTicketCommand request,
         CancellationToken cancellationToken)
     {
@@ -70,7 +70,7 @@ internal sealed class ReserveTicketHandler(
             await db.SaveChangesAsync(cancellationToken);
 
             var expiresAt = DateTime.UtcNow.Add(lockTtl);
-            await publisher.Publish(
+            await mediator.Publish(
                 new TicketReserved(ticket.Id, ticket.EventId, ticket.Seat, ticket.Price, request.UserId, expiresAt),
                 cancellationToken);
 
