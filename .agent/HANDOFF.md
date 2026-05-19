@@ -569,3 +569,37 @@ TicketGate - bilet satis platformu
 P13 - Docker Compose Production
 
 ---
+## SON HANDOFF - 2026-05-18 Security Hardening + Built-in RateLimiter
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; mevcut context P15 gosterse de bu oturum gorevi P17 security hardening olarak uygulandi.
+- `RateLimiterExtensions` eklendi; auth/reserve/queue/read/sse policy'leri ASP.NET Core built-in RateLimiter ile IP bazli fixed-window olarak calisiyor.
+- Rate limit sayilari appsettings `RateLimiting` bolumune tasindi; policy adlari moduller API'ye referans vermesin diye `TicketGate.Core.Security.RateLimitPolicies` altinda tutuldu.
+- Identity, Booking ticket, WaitingRoom, Event, Payment ve Notification SSE endpoint'lerine ilgili `RequireRateLimiting` metadata'lari eklendi.
+- `CorsExtensions` eklendi; Development her origin'e izin veriyor, Production `Cors:AllowedOrigins` allowlist'ini kullaniyor.
+- `SecurityHeadersMiddleware` eklendi; nosniff, DENY frame, XSS protection, referrer policy ve permissions policy header'lari ekleniyor.
+- `ValidationExtensions` ile `ApiBehaviorOptions.SuppressModelStateInvalidFilter = true` konfiguru eklendi.
+- Program.cs middleware sirasi merkezi hale getirildi: `UseRouting`, security headers, CorrelationId, CORS, auth, authorization, rate limiter, metrics, endpoints.
+- IdentityModule auth middleware kaydindan arindirildi; JWT validation `ClockSkew = TimeSpan.Zero` olarak guclendirildi.
+- `tests/TicketGate.API.Tests` eklendi; rate limit 429, security headers ve development CORS davranisi test ediliyor.
+
+### Dogrulama
+- RED: `dotnet test tests\TicketGate.API.Tests\TicketGate.API.Tests.csproj -v minimal` once yeni RateLimiter/CORS/SecurityHeaders tipleri olmadigi icin derlemede fail verdi.
+- GREEN: `dotnet test tests\TicketGate.API.Tests\TicketGate.API.Tests.csproj -v minimal` basarili, 3/3.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, mevcut NuGet vulnerability uyarilari devam ediyor.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: Docker/Testcontainers endpoint'i bulunamadigi icin Booking, Payment ve Notification integration testlerinde ortam kaynakli fail verdi; API testleri ayni kosuda 3/3 basarili.
+
+### Dikkat
+- Kullanici `commit atma` dedi; commit/stage/push yapilmadi.
+- Docker bu oturumda calismadigi veya Testcontainers endpoint'i konfigure olmadigi icin full integration test dogrulamasi tamamlanamadi.
+- Booking promptunda gecen `/tickets/{id}/confirm` route'u mevcut endpoint dosyasinda yok; bu gorevde yeni confirm route'u icat edilmedi.
+- Mevcut transitive NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Siradaki Gorev
+P18 - Performance optimizasyonu
+
+---

@@ -39,9 +39,18 @@ Log.Logger = loggerConfiguration
 builder.Host.UseSerilog();
 
 builder.Services.AddTicketGateHealthChecks(builder.Configuration);
+builder.Services.AddTicketGateCors(builder.Configuration, builder.Environment);
+builder.Services.AddTicketGateRateLimiter(builder.Configuration);
+builder.Services.AddTicketGateValidation();
 builder.Services.AddModules(builder.Configuration);
 var app = builder.Build();
+app.UseRouting();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseTicketGateCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
 /// <summary>
 /// HTTP request metriklerini otomatik toplar.

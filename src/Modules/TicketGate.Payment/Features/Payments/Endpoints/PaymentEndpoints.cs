@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TicketGate.Core.Extensions;
+using TicketGate.Core.Security;
 using TicketGate.Payment.Features.Payments.Commands.InitiatePayment;
 using TicketGate.Payment.Features.Payments.Commands.RefundPayment;
 using TicketGate.Payment.Features.Payments.Queries.GetPaymentById;
@@ -45,7 +46,8 @@ public static class PaymentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         group.MapPost("/{id:guid}/refund", async (
             Guid id,
@@ -69,7 +71,8 @@ public static class PaymentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         group.MapGet("/{id:guid}", async (
             Guid id,

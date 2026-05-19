@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TicketGate.Core.Extensions;
 using TicketGate.Core.Pagination;
+using TicketGate.Core.Security;
 using TicketGate.Event.Features.Events.Commands.CreateEvent;
 using TicketGate.Event.Features.Events.Commands.PublishEvent;
 using TicketGate.Event.Features.Events.Commands.UpdateEvent;
@@ -46,7 +47,8 @@ public static class EventEndpoints
                 """)
             .Produces<Guid>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity);
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         group.MapPut("/events/{id:guid}", async (
             Guid id,
@@ -103,7 +105,8 @@ public static class EventEndpoints
                 Venue ve performer bilgileri projection-first okunur.
                 """)
             .Produces<EventDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapGet("/events", async (
             ISender sender,
@@ -125,8 +128,9 @@ public static class EventEndpoints
             .WithDescription("""
                 Yayinlanmis event listesini sayfalama, arama, sehir ve baslangic tarihi filtreleriyle getirir.
                 Query handler projection-first okuma yapar.
-                """)
-            .Produces<PagedResult<EventListDto>>(StatusCodes.Status200OK);
+            """)
+            .Produces<PagedResult<EventListDto>>(StatusCodes.Status200OK)
+            .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapPost("/venues", async (
             CreateVenueCommand command,

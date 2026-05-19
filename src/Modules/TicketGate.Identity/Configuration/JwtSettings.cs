@@ -2,7 +2,7 @@ namespace TicketGate.Identity.Configuration;
 
 /// <summary>
 /// JWT token uretimi ve validasyonu icin yapilandirma ayarlari.
-/// Token sureleri ve clock skew kod icinde magic number olarak tutulmaz.
+/// Token sureleri kod icinde magic number olarak tutulmaz; validation clock skew guvenlik icin sifirdir.
 /// </summary>
 public sealed class JwtSettings
 {
@@ -17,6 +17,4 @@ public sealed class JwtSettings
     public int AccessTokenExpirationMinutes { get; init; } = 15;
 
     public int RefreshTokenExpirationDays { get; init; } = 7;
-
-    public int ClockSkewMinutes { get; init; } = 2;
 }

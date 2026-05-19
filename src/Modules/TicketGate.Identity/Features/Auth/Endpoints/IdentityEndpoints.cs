@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TicketGate.Core.Extensions;
+using TicketGate.Core.Security;
 using TicketGate.Identity.Features.Auth.Commands.LoginUser;
 using TicketGate.Identity.Features.Auth.Commands.RefreshToken;
 using TicketGate.Identity.Features.Auth.Commands.RegisterUser;
@@ -40,7 +41,8 @@ public static class IdentityEndpoints
                 """)
             .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity);
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+            .RequireRateLimiting(RateLimitPolicies.Auth);
 
         group.MapPost("/login", async (
             LoginUserCommand command,
@@ -58,7 +60,8 @@ public static class IdentityEndpoints
                 """)
             .Produces<LoginUserResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity);
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+            .RequireRateLimiting(RateLimitPolicies.Auth);
 
         group.MapPost("/refresh", async (
             RefreshTokenCommand command,
@@ -76,7 +79,8 @@ public static class IdentityEndpoints
                 """)
             .Produces<LoginUserResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity);
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+            .RequireRateLimiting(RateLimitPolicies.Auth);
 
         return app;
     }

@@ -51,6 +51,10 @@
 - [x] Dependabot eklendi, sonra temiz GitHub Actions ekrani icin devre disi birakildi
 - [x] PR template eklendi
 - [x] CD workflow roadmap olarak tutuldu, otomatik deploy devre disi
+- [x] RateLimiter eklendi
+- [x] CORS policy eklendi
+- [x] Security headers middleware
+- [x] JWT güvenlik ayarları güçlendirildi
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -329,3 +333,20 @@
 | 2026-05-18 | CD workflow disabled roadmap olarak tutuldu | Production server/secrets hazir degil; repo'ya giren gelistirici CD yol haritasini gorsun ama deploy tetiklenmesin |
 | 2026-05-18 | Dependabot devre disi birakildi | Ilk kurulumda cok sayida major upgrade PR'i ve kirmizi run olusturdu; temiz CI gorunurlugu tercih edildi |
 | 2026-05-18 | Compose API image environment override ile yonetiliyor | Base compose local `ticketgate/api:latest` davranisini korurken production deploy GHCR SHA tag'li imaji cekebiliyor |
+
+## 2026-05-18 Security Hardening + RateLimiter Notu
+
+- [x] ASP.NET Core built-in RateLimiter TicketGate.API host seviyesine eklendi.
+- [x] Auth, reserve, queue, read ve SSE policy'leri appsettings `RateLimiting` bolumunden okunuyor.
+- [x] Rate limiter IP bazli fixed-window partition kullaniyor; Ocelot olmadigi icin uygulama katmaninda calisiyor.
+- [x] Identity, Booking, WaitingRoom, Event, Payment ve SSE endpoint'lerine ilgili `RequireRateLimiting` policy'leri eklendi.
+- [x] CORS Development/Production policy'leri eklendi; production allowed origins appsettings `Cors:AllowedOrigins` uzerinden okunuyor.
+- [x] SecurityHeadersMiddleware eklendi ve Program.cs pipeline'inda CorrelationId'den once calistiriliyor.
+- [x] JWT validation `ClockSkew = TimeSpan.Zero` olacak sekilde guclendirildi.
+- [x] API security hardening test projesi eklendi; rate limit 429, security headers ve development CORS davranisi test edildi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-18 | Rate limit policy adlari Core'da tutuldu | Endpointler module projelerinde yasiyor; modullerin API projesine referans vermemesi icin ortak policy sozlesmesi shared kernel'de tutuldu |
+| 2026-05-18 | Rate limit sayilari appsettings'e tasindi | AGENTS.md magic number yasagi nedeniyle limit/pencere/kuyruk degerleri kod icine gomulmedi |
+| 2026-05-18 | IdentityModule auth middleware sirasi host'a tasindi | CORS, auth, authorization ve rate limiter middleware sirasi Program.cs tarafinda merkezi ve okunur kalmali |

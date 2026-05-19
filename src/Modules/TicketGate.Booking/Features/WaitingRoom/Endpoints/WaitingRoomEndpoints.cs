@@ -7,6 +7,7 @@ using TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;
 using TicketGate.Booking.Features.WaitingRoom.Commands.LeaveQueue;
 using TicketGate.Booking.Features.WaitingRoom.Queries.GetQueuePosition;
 using TicketGate.Core.Extensions;
+using TicketGate.Core.Security;
 
 namespace TicketGate.Booking.Features.WaitingRoom.Endpoints;
 
@@ -44,7 +45,8 @@ public static class WaitingRoomEndpoints
             .Produces<JoinQueueResponse>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Queue);
 
         group.MapGet("/{eventId:guid}/position", async (
             Guid eventId,
@@ -65,7 +67,8 @@ public static class WaitingRoomEndpoints
             .Produces<QueuePositionDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapDelete("/{eventId:guid}/leave", async (
             Guid eventId,
@@ -87,7 +90,8 @@ public static class WaitingRoomEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         return app;
     }

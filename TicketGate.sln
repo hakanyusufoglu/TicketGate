@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.TestInfrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.Notification.Tests", "tests\TicketGate.Notification.Tests\TicketGate.Notification.Tests.csproj", "{32DA8E26-9429-41CD-81BC-E3BC8DCE2ADA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketGate.API.Tests", "tests\TicketGate.API.Tests\TicketGate.API.Tests.csproj", "{797D1266-C2EE-492C-B182-3A90D7A6F4D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -201,6 +203,18 @@ Global
 		{32DA8E26-9429-41CD-81BC-E3BC8DCE2ADA}.Release|x64.Build.0 = Release|Any CPU
 		{32DA8E26-9429-41CD-81BC-E3BC8DCE2ADA}.Release|x86.ActiveCfg = Release|Any CPU
 		{32DA8E26-9429-41CD-81BC-E3BC8DCE2ADA}.Release|x86.Build.0 = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|x64.Build.0 = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Debug|x86.Build.0 = Debug|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|x64.ActiveCfg = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|x64.Build.0 = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|x86.ActiveCfg = Release|Any CPU
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -220,5 +234,6 @@ Global
 		{7AF69806-0E69-4B78-BE84-859EB0E5D18E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{EF7DC4F3-8BD0-437B-A8ED-5735D66EBFF6} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{32DA8E26-9429-41CD-81BC-E3BC8DCE2ADA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{797D1266-C2EE-492C-B182-3A90D7A6F4D9} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

@@ -17,8 +17,16 @@ using TicketGate.Identity.Infrastructure.Persistence;
 
 namespace TicketGate.Identity;
 
+/// <summary>
+/// Identity modulunun servis ve endpoint kayitlarini yapar.
+/// JWT Bearer dogrulama, Swagger auth tanimi ve auth slicelarini moduler monolith sinirinda toplar.
+/// </summary>
 public sealed class IdentityModule : IModule
 {
+    /// <summary>
+    /// Identity DbContext, JWT Bearer dogrulama, authorization ve validator servislerini kaydeder.
+    /// Token validation issuer, audience, lifetime ve signing key kontrollerini zorunlu tutar.
+    /// </summary>
     public void RegisterServices(IServiceCollection services, IConfiguration config)
     {
         var connectionString = config.GetConnectionString("Identity");
@@ -49,7 +57,7 @@ public sealed class IdentityModule : IModule
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(jwtSettings.ClockSkewMinutes)
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
@@ -84,6 +92,10 @@ public sealed class IdentityModule : IModule
         services.AddValidatorsFromAssembly(typeof(AssemblyMarker).Assembly, includeInternalTypes: true);
     }
 
+    /// <summary>
+    /// Development ortaminda Swagger middleware'ini ve auth endpoint'lerini kaydeder.
+    /// Authentication/authorization middleware sirasi API host tarafinda merkezi olarak yonetilir.
+    /// </summary>
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         if (app is WebApplication webApplication)
@@ -97,9 +109,6 @@ public sealed class IdentityModule : IModule
                     options.RoutePrefix = "swagger";
                 });
             }
-
-            webApplication.UseAuthentication();
-            webApplication.UseAuthorization();
         }
 
         app.MapIdentityEndpoints();

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Core.Extensions;
 using TicketGate.Core.Metrics;
+using TicketGate.Core.Security;
 using TicketGate.Notification.Configuration;
 using TicketGate.Notification.Domain;
 
@@ -75,7 +76,8 @@ public static class SseEndpoints
             """)
         .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
         .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+        .RequireRateLimiting(RateLimitPolicies.Sse);
 
         group.MapGet("/user", async Task<IResult> (
             IConnectionMultiplexer redis,
@@ -129,7 +131,8 @@ public static class SseEndpoints
             """)
         .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
         .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+        .RequireRateLimiting(RateLimitPolicies.Sse);
     }
 
     /// <summary>

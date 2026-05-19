@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-CI GitHub Actions tamamlandi. CD workflow roadmap olarak repo'da duruyor ama deploy devre disi. Aktif görev: P15 — Environment + Secrets.
+P17 Security hardening + ASP.NET Core built-in RateLimiter tamamlandi. Siradaki aktif görev: P18 — Performance optimizasyonu.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## Sıradaki Prompt
-P15 — Environment + Secrets
+P18 — Performance optimizasyonu
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -76,5 +76,8 @@ Docker Compose Production tamamlandi. `infrastructure/docker/docker-compose.yml`
 
 ## Son Tamamlanan Ara Gorev
 CI/CD GitHub Actions kurulumu son duruma hizalandi. `.github/workflows/ci.yml` master/main/develop push ve PR akislari icin restore, build, test ve migration check adimlarini calistiriyor; migration check `--context` ve `--configuration Release` kullaniyor. Repo ana branch'i master olarak kabul edildi; main branch bu proje icin onemli degil. `.github/workflows/cd.yml` dosyasi silinmedi, roadmap olarak tutuldu; `workflow_dispatch` ve `if: false` ile otomatik deploy devre disi, ileride SERVER_HOST/SERVER_USER/SERVER_SSH_KEY ve production server hazirlaninca doldurulacak. Dependabot PR kalabaligi ve kirmizi run'lar nedeniyle `.github/dependabot.yml` silindi, acik Dependabot PR'lari kapatildi. Son CI run'lari master icin yesil calisiyor; eski kirmizi CD/Dependabot run'lari sadece gecmis kaydi.
+
+## Son Tamamlanan Ara Gorev
+Security hardening ve built-in RateLimiter tamamlandi. TicketGate.API host seviyesinde CORS, RateLimiter, global validation options ve SecurityHeadersMiddleware eklendi; middleware sirasi `UseRouting -> SecurityHeaders -> CorrelationId -> CORS -> Authentication -> Authorization -> RateLimiter -> endpoints` olarak merkezi hale getirildi. Rate limit policy'leri IP bazli fixed-window olarak appsettings `RateLimiting` ayarlarindan okunuyor ve endpoint metadata'si Core `RateLimitPolicies` sabitleriyle baglaniyor. JWT validation clock skew sifira indirildi; API security testleri rate limit 429, security headers ve development CORS davranisini dogruluyor.
 
 

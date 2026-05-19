@@ -11,6 +11,7 @@ using TicketGate.Booking.Features.Tickets.Queries.GetTicketById;
 using TicketGate.Core.Contracts;
 using TicketGate.Core.Extensions;
 using TicketGate.Core.Results;
+using TicketGate.Core.Security;
 
 namespace TicketGate.Booking.Features.Tickets.Endpoints;
 
@@ -51,7 +52,8 @@ public static class TicketEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         group.MapPost("/tickets/{id:guid}/cancel", async (
             Guid id,
@@ -75,7 +77,8 @@ public static class TicketEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitPolicies.Reserve);
 
         group.MapGet("/tickets/{id:guid}", async (
             Guid id,
@@ -92,7 +95,8 @@ public static class TicketEndpoints
                 Query handler projection-first okuma yapar.
                 """)
             .Produces<TicketDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapGet("/events/{id:guid}/seats", async (
             Guid id,
@@ -108,7 +112,8 @@ public static class TicketEndpoints
                 Event icin musait koltuk listesini getirir.
                 Koltuk bilgileri section, row, seat number ve fiyat alanlariyla projection-first doner.
                 """)
-            .Produces<List<SeatDto>>(StatusCodes.Status200OK);
+            .Produces<List<SeatDto>>(StatusCodes.Status200OK)
+            .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapPost("/events/{id:guid}/tickets/generate", async (
             Guid id,
