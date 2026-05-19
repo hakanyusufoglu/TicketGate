@@ -603,3 +603,40 @@ TicketGate - bilet satis platformu
 P18 - Performance optimizasyonu
 
 ---
+## SON HANDOFF - 2026-05-19 Performance Optimizasyonu
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; aktif gorevin P18 Performance optimizasyonu oldugu dogrulandi.
+- Tum handler'lar EF Core `AsNoTracking` ve `Include` kullanimi acisindan tarandi.
+- Query handler'larin `AsNoTracking` kullandigi ve query tarafinda `Include` bulunmadigi dogrulandi.
+- Payment `InitiatePaymentHandler` command-side idempotency sorgusundaki `AsNoTracking` kaldirildi.
+- Event modulu icin `EventCacheSettings`, `IEventCacheService`, `EventCacheService` ve `EventCachePolicies` eklendi.
+- `GetEventByIdHandler` Redis cache-aside pattern'e alindi: once cache, miss durumunda projection-first DB sorgusu ve cache write.
+- `UpdateEventHandler` ve `PublishEventHandler` basarili degisiklik sonrasi event detail cache invalidation yapiyor.
+- `PublishEventHandler` event list output cache tag'ini evict ediyor.
+- GetEvents endpoint'i `events` output cache policy'sine baglandi.
+- TicketGate.API response compression ve output cache middleware'leriyle guncellendi.
+- Event detail, seat map ve event list output cache TTL degerleri appsettings `EventCacheSettings` bolumune tasindi.
+- Booking ve Payment development connection string'lerine Npgsql pool ayarlari eklendi.
+- Event cache ve invalidation davranislari icin unit testler eklendi.
+- `.agent/MEMORY.md`, `.agent/CONTEXT.md` ve `.agent/HANDOFF.md` P18 tamamlandi / P19 siradaki gorev olacak sekilde guncellendi.
+
+### Dogrulama
+- RED: `dotnet test tests\TicketGate.Event.Tests\TicketGate.Event.Tests.csproj -v minimal` once `IEventCacheService` ve cache altyapisi olmadigi icin derlemede fail verdi.
+- GREEN: `dotnet test tests\TicketGate.Event.Tests\TicketGate.Event.Tests.csproj -v minimal` basarili, 13/13.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili; mevcut NuGet vulnerability/pruning uyarilari devam ediyor.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili; Booking 28/28, Event 13/13, Identity 10/10, Payment 19/19, Notification 3/3, API 3/3.
+
+### Dikkat
+- GetAvailableSeats icin `event_id + status` composite index zaten mevcut; tablo schema'sinda section/row/seat_number kolonlari olmadigi icin mevcut SeatCode projection + parsing korunuyor.
+- Event cache invalidation hatalari kritik degil; cache servisinde warning loglanip ana akis bozulmuyor.
+- Mevcut transitive NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Siradaki Gorev
+P19 - Smoke Test + E2E
+
+---

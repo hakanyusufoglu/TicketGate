@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-P17 Security hardening + ASP.NET Core built-in RateLimiter tamamlandi. Siradaki aktif görev: P18 — Performance optimizasyonu.
+P18 Performance optimizasyonu tamamlandi. Siradaki aktif görev: P19 — Smoke Test + E2E.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## Sıradaki Prompt
-P18 — Performance optimizasyonu
+P19 — Smoke Test + E2E
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -79,5 +79,8 @@ CI/CD GitHub Actions kurulumu son duruma hizalandi. `.github/workflows/ci.yml` m
 
 ## Son Tamamlanan Ara Gorev
 Security hardening ve built-in RateLimiter tamamlandi. TicketGate.API host seviyesinde CORS, RateLimiter, global validation options ve SecurityHeadersMiddleware eklendi; middleware sirasi `UseRouting -> SecurityHeaders -> CorrelationId -> CORS -> Authentication -> Authorization -> RateLimiter -> endpoints` olarak merkezi hale getirildi. Rate limit policy'leri IP bazli fixed-window olarak appsettings `RateLimiting` ayarlarindan okunuyor ve endpoint metadata'si Core `RateLimitPolicies` sabitleriyle baglaniyor. JWT validation clock skew sifira indirildi; API security testleri rate limit 429, security headers ve development CORS davranisini dogruluyor.
+
+## Son Tamamlanan Ara Gorev
+Performance optimizasyonu tamamlandi. Tum handler'lar EF Core tracking ve Include kullanimi acisindan tarandi; query handler'lar AsNoTracking/projection-first durumda, command handler'daki InitiatePayment AsNoTracking kullanimi kaldirildi. Event modulu icin Redis cache-aside servisi eklendi; GetEventById cache hit/miss akisi, UpdateEvent/PublishEvent invalidation ve PublishEvent output cache tag evict davranisi test edildi. TicketGate.API response compression ve output cache middleware'leriyle guncellendi; event listesi 60sn output cache policy'sine baglandi ve cache/pool sureleri appsettings uzerinden okunuyor.
 
 

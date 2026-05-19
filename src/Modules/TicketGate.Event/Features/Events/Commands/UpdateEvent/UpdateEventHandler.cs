@@ -2,12 +2,22 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
+using TicketGate.Event.Infrastructure.Cache;
 using TicketGate.Event.Infrastructure.Persistence;
 
 namespace TicketGate.Event.Features.Events.Commands.UpdateEvent;
 
-internal sealed class UpdateEventHandler(EventDbContext db) : IRequestHandler<UpdateEventCommand, Result>
+/// <summary>
+/// Draft event guncelleme komutunu isler.
+/// EF Core tracking ile entity state degisir ve basarili kayit sonrasi event detail cache'i temizlenir.
+/// </summary>
+internal sealed class UpdateEventHandler(EventDbContext db, IEventCacheService cacheService)
+    : IRequestHandler<UpdateEventCommand, Result>
 {
+    /// <summary>
+    /// Event'i tracked sorguyla yukler, published kontrolunu yapar ve guncelleme sonrasi stale cache kaydini siler.
+    /// Command handler tracking gerektirdigi icin AsNoTracking kullanmaz.
+    /// </summary>
     public async Task<Result> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
     {
         var eventEntity = await db.Events
@@ -27,6 +37,7 @@ internal sealed class UpdateEventHandler(EventDbContext db) : IRequestHandler<Up
 
         eventEntity.Update(request.Name, request.Description, request.StartsAt, request.EndsAt);
         await db.SaveChangesAsync(cancellationToken);
+        await cacheService.InvalidateEventAsync(request.Id, cancellationToken);
 
         return Result.Ok();
     }

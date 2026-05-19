@@ -1,11 +1,16 @@
+using System.IO.Compression;
+using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Elasticsearch;
 using Prometheus;
+using TicketGate.API.Configuration;
 using TicketGate.API.Extensions;
 using TicketGate.API.Middleware;
 using TicketGate.API.Seed;
 using TicketGate.Core.Extensions;
+using TicketGate.Event.Configuration;
+using TicketGate.Event.Infrastructure.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,8 +47,49 @@ builder.Services.AddTicketGateHealthChecks(builder.Configuration);
 builder.Services.AddTicketGateCors(builder.Configuration, builder.Environment);
 builder.Services.AddTicketGateRateLimiter(builder.Configuration);
 builder.Services.AddTicketGateValidation();
+builder.Services.Configure<ResponseCompressionSettings>(
+    builder.Configuration.GetSection(ResponseCompressionSettings.SectionName));
+builder.Services.Configure<EventCacheSettings>(
+    builder.Configuration.GetSection(EventCacheSettings.SectionName));
+
+/// <summary>
+/// HTTP response compression. JSON response'lari sikistirarak bant genisligini azaltir.
+/// SSE response'lari text/event-stream olarak bu sikistirma kapsaminda hedeflenmez.
+/// </summary>
+builder.Services.AddResponseCompression(options =>
+{
+    var compressionSettings = builder.Configuration
+        .GetSection(ResponseCompressionSettings.SectionName)
+        .Get<ResponseCompressionSettings>() ?? new ResponseCompressionSettings();
+
+    options.EnableForHttps = compressionSettings.EnableForHttps;
+    options.Providers.Add<GzipCompressionProvider>();
+    options.Providers.Add<BrotliCompressionProvider>();
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(
+    options => options.Level = CompressionLevel.Fastest);
+
+/// <summary>
+/// Event listesi output cache policy'si.
+/// Authenticated istekler cache'lenmez; publish akisi tag uzerinden temizleme yapar.
+/// </summary>
+builder.Services.AddOutputCache(options =>
+{
+    var eventCacheSettings = builder.Configuration
+        .GetSection(EventCacheSettings.SectionName)
+        .Get<EventCacheSettings>() ?? new EventCacheSettings();
+
+    options.AddPolicy(EventCachePolicies.Events, policy =>
+        policy
+            .Expire(TimeSpan.FromSeconds(eventCacheSettings.EventListOutputCacheTtlSeconds))
+            .Tag(EventCachePolicies.Events)
+            .SetVaryByHeader("Accept-Language"));
+});
+
 builder.Services.AddModules(builder.Configuration);
 var app = builder.Build();
+app.UseResponseCompression();
 app.UseRouting();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -51,6 +97,7 @@ app.UseTicketGateCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+app.UseOutputCache();
 
 /// <summary>
 /// HTTP request metriklerini otomatik toplar.

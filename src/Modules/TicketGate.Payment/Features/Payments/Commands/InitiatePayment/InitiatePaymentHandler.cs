@@ -38,7 +38,6 @@ internal sealed class InitiatePaymentHandler(
         }
 
         var existingPayment = await db.Payments
-            .AsNoTracking()
             .Where(payment => payment.IdempotencyKey == request.IdempotencyKey)
             .Select(payment => new InitiatePaymentResponse(payment.Id, payment.Status.ToString()))
             .SingleOrDefaultAsync(cancellationToken);

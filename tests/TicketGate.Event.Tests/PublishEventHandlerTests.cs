@@ -25,7 +25,9 @@ public sealed class PublishEventHandlerTests
         await db.Events.AddAsync(eventEntity, CancellationToken.None);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new PublishEventHandler(db);
+        var cache = new FakeEventCacheService();
+        var outputCache = new FakeOutputCacheStore();
+        var handler = new PublishEventHandler(db, cache, outputCache);
 
         var result = await handler.Handle(new PublishEventCommand(eventEntity.Id), CancellationToken.None);
 
@@ -33,6 +35,9 @@ public sealed class PublishEventHandlerTests
 
         var publishedEvent = await db.Events.SingleAsync(CancellationToken.None);
         publishedEvent.IsPublished.Should().BeTrue();
+        cache.InvalidateEventCalls.Should().Be(1);
+        cache.InvalidatedEventId.Should().Be(eventEntity.Id);
+        outputCache.EvictedTag.Should().Be("events");
     }
 
     [Fact]
@@ -53,7 +58,9 @@ public sealed class PublishEventHandlerTests
         await db.Events.AddAsync(eventEntity, CancellationToken.None);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new PublishEventHandler(db);
+        var cache = new FakeEventCacheService();
+        var outputCache = new FakeOutputCacheStore();
+        var handler = new PublishEventHandler(db, cache, outputCache);
 
         var result = await handler.Handle(new PublishEventCommand(eventEntity.Id), CancellationToken.None);
 
@@ -61,5 +68,7 @@ public sealed class PublishEventHandlerTests
         result.Error.Should().NotBeNull();
         result.Error!.Type.Should().Be(AppErrorType.Conflict);
         result.Error.Code.Should().Be("Event.AlreadyPublished");
+        cache.InvalidateEventCalls.Should().Be(0);
+        outputCache.EvictedTag.Should().BeNull();
     }
 }

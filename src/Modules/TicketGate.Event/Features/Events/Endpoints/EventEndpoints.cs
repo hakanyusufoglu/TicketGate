@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Core.Extensions;
 using TicketGate.Core.Pagination;
 using TicketGate.Core.Security;
@@ -14,6 +16,7 @@ using TicketGate.Event.Features.Events.Queries.GetEventList;
 using TicketGate.Event.Features.Performers.Commands.CreatePerformer;
 using TicketGate.Event.Features.Venues.Commands.CreateVenue;
 using TicketGate.Event.Features.Venues.Queries.GetVenueById;
+using TicketGate.Event.Infrastructure.Cache;
 
 namespace TicketGate.Event.Features.Events.Endpoints;
 
@@ -130,6 +133,7 @@ public static class EventEndpoints
                 Query handler projection-first okuma yapar.
             """)
             .Produces<PagedResult<EventListDto>>(StatusCodes.Status200OK)
+            .CacheOutput(EventCachePolicies.Events)
             .RequireRateLimiting(RateLimitPolicies.Read);
 
         group.MapPost("/venues", async (

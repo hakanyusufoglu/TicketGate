@@ -55,6 +55,11 @@
 - [x] CORS policy eklendi
 - [x] Security headers middleware
 - [x] JWT güvenlik ayarları güçlendirildi
+- [x] EF Core AsNoTracking optimizasyonu
+- [x] Redis cache stratejisi (cache-aside)
+- [x] Response compression
+- [x] Output cache (event list)
+- [x] Connection pool ayarı
 - [ ] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
@@ -128,8 +133,8 @@
 | P14 | Docker Compose production (Health Checks dahil) | ✅ |
 | P15 | CI/CD — GitHub Actions | ✅ |
 | P16 | Environment yönetimi + Secrets | ⏳ |
-| P17 | Security hardening + Built-in RateLimiter | ⏳ |
-| P18 | Performance optimizasyonu | ⏳ |
+| P17 | Security hardening + Built-in RateLimiter | ✅ |
+| P18 | Performance optimizasyonu | ✅ |
 | P19 | Smoke test + E2E test | ⏳ |
 
 ## Stack (hızlı referans)
@@ -350,3 +355,21 @@
 | 2026-05-18 | Rate limit policy adlari Core'da tutuldu | Endpointler module projelerinde yasiyor; modullerin API projesine referans vermemesi icin ortak policy sozlesmesi shared kernel'de tutuldu |
 | 2026-05-18 | Rate limit sayilari appsettings'e tasindi | AGENTS.md magic number yasagi nedeniyle limit/pencere/kuyruk degerleri kod icine gomulmedi |
 | 2026-05-18 | IdentityModule auth middleware sirasi host'a tasindi | CORS, auth, authorization ve rate limiter middleware sirasi Program.cs tarafinda merkezi ve okunur kalmali |
+
+## 2026-05-19 Performance Optimizasyonu Notu
+
+- [x] Tum handler'lar AsNoTracking/Include acisindan tarandi; query handler'lar AsNoTracking kullaniyor, query tarafinda Include yok.
+- [x] Payment InitiatePayment command handler'daki command-side AsNoTracking kaldirildi.
+- [x] EventCacheSettings, IEventCacheService ve EventCacheService eklendi; event detail ve venue seat map Redis cache-aside pattern ile yonetiliyor.
+- [x] GetEventByIdHandler once Redis cache okuyor, miss durumunda projection-first EF sorgusu calistirip sonucu cache'e yaziyor.
+- [x] UpdateEventHandler ve PublishEventHandler basarili degisiklik sonrasi event detail cache invalidation yapiyor.
+- [x] PublishEventHandler event list output cache tag'ini evict ediyor; GetEvents endpoint'i `events` output cache policy'sine baglandi.
+- [x] TicketGate.API response compression ve output cache middleware'leriyle guncellendi; TTL degerleri appsettings EventCacheSettings bolumunden okunuyor.
+- [x] Booking ve Payment development connection string'lerine Npgsql pool ayarlari eklendi.
+- [x] Event cache davranisi icin handler unit testleri eklendi; full solution testleri basarili calisti.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-19 | Event cache TTL degerleri EventCacheSettings'e tasindi | AGENTS.md magic number yasagi nedeniyle Redis ve output cache sureleri kod icinde sabit tutulmadi |
+| 2026-05-19 | Event output cache policy adi Event modulu sabitinde tutuldu | Endpoint ve API host ayni policy/tag adini kullanirken magic string tekrarini engeller |
+| 2026-05-19 | GetAvailableSeats seat parsing korundu | Booking ticket tablosunda section/row/seat_number kolonlari yok; mevcut SeatCode projection ve parsing davranisi schema degistirmeden performansli kalir |
