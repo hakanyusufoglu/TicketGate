@@ -1,0 +1,384 @@
+@primaryEmail = e2e-test@ticketgate.io
+@secondaryEmail = e2e-test2@ticketgate.io
+@password = Test1234!
+@paymentIdempotencyKey = e2e-test-payment-001
+@ticketId1 = ADIM_6_RESPONSE_ILK_TICKET_ID
+@ticketId2 = ADIM_6_RESPONSE_IKINCI_TICKET_ID
+
+### ==================================================
+### SENARYO 1 - TAM REZERVASYON AKISI
+### ==================================================
+
+### Adim 1 - Kullanici kaydi
+# Birincil test kullanicisi olusturulur.
+# Expected: HTTP 201 Created + userId
+# @name registerPrimaryUser
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{primaryEmail}}",
+  "password": "{{password}}",
+  "fullName": "E2E Test User"
+}
+
+### Adim 2 - Login ile access token al
+# Sonraki korumali isteklerde bu accessToken kullanilir.
+# Expected: HTTP 200 OK + accessToken
+# @name loginPrimaryUser
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{primaryEmail}}",
+  "password": "{{password}}"
+}
+
+### Adim 3 - Event listesi seed data kontrolu
+# Development seed icindeki yayindaki event listede gorunmelidir.
+# Expected: HTTP 200 OK + totalCount >= 1
+# @name getEvents
+GET {{baseUrl}}/api/v1/events
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 4 - Event detayi
+# Seed event Tarkan Konseri 2026 detayini dondurmelidir.
+# Expected: HTTP 200 OK + name: Tarkan Konseri 2026
+# @name getSeedEvent
+GET {{baseUrl}}/api/v1/events/{{eventId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 5 - Ticket generate et
+# Temiz development veritabaninda seed event icin 50 ticket uretir.
+# Expected: HTTP 201 Created + ticketCount: 50
+# @name generateTickets
+POST {{baseUrl}}/api/v1/events/{{eventId}}/tickets/generate
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 6 - Musait koltuklar
+# Generate sonrasi response body'deki ilk iki ticketId degerini dosya basindaki ticketId1/ticketId2 degiskenlerine yaz.
+# Visual Studio root JSON array'den otomatik request variable cikarmayi desteklemedigi icin bu iki deger manuel kopyalanir.
+# Expected: HTTP 200 OK + 50 musait koltuk
+# @name getAvailableSeats
+GET {{baseUrl}}/api/v1/events/{{eventId}}/seats
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 7 - Ticket reserve et
+# Ilk musait ticket Redis lock ile rezerve edilir.
+# Expected: HTTP 201 Created + expiresAt
+# @name reserveFirstTicket
+POST {{baseUrl}}/api/v1/tickets/{{ticketId1}}/reserve
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 8 - Ticket durumu kontrolu Reserved
+# Rezervasyon sonrasi ticket durumu Reserved olmalidir.
+# Expected: HTTP 200 OK + status: Reserved
+# @name getReservedTicket
+GET {{baseUrl}}/api/v1/tickets/{{reserveFirstTicket.response.body.$.ticketId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 9 - Odeme baslat
+# UserId JWT'den, amount ticket fiyatindan hesaplanir; body sadece ticketId, provider ve idempotencyKey tasir.
+# Expected: HTTP 201 Created + paymentId + status: Pending
+# @name initiatePayment
+POST {{baseUrl}}/api/v1/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+{
+  "ticketId": "{{reserveFirstTicket.response.body.$.ticketId}}",
+  "provider": "Stripe",
+  "idempotencyKey": "{{paymentIdempotencyKey}}"
+}
+
+### Adim 10 - OutboxWorker bekleme
+# Bu satir manuel kontrol icindir; bir sonraki istege gecmeden once 6 saniye bekle.
+# Expected: Manuel bekleme, HTTP istegi yok.
+
+### Adim 11 - Odeme durumu kontrolu Completed
+# OutboxWorker PaymentInitiated mesajini isleyince odeme Completed olur.
+# Expected: HTTP 200 OK + status: Completed
+# @name getCompletedPayment
+GET {{baseUrl}}/api/v1/payments/{{initiatePayment.response.body.$.paymentId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 12 - Ticket durumu kontrolu Confirmed
+# PaymentCompleted event'i Booking tarafinda ticket'i Confirmed yapar.
+# Expected: HTTP 200 OK + status: Confirmed
+# @name getConfirmedTicket
+GET {{baseUrl}}/api/v1/tickets/{{reserveFirstTicket.response.body.$.ticketId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### ==================================================
+### SENARYO 2 - IADE AKISI
+### ==================================================
+
+### Adim 13 - Iade talebi
+# Confirmed payment icin refund outbox mesaji olusturulur.
+# Expected: HTTP 204 No Content
+# @name requestRefund
+POST {{baseUrl}}/api/v1/payments/{{initiatePayment.response.body.$.paymentId}}/refund
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 14 - OutboxWorker bekleme
+# Bu satir manuel kontrol icindir; bir sonraki istege gecmeden once 6 saniye bekle.
+# Expected: Manuel bekleme, HTTP istegi yok.
+
+### Adim 15 - Odeme durumu Refunded
+# Refund outbox mesaji islenince payment Refunded olmalidir.
+# Expected: HTTP 200 OK + status: Refunded
+# @name getRefundedPayment
+GET {{baseUrl}}/api/v1/payments/{{initiatePayment.response.body.$.paymentId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 16 - Ticket tekrar Available
+# PaymentRefunded event'i Confirmed ticket'i tekrar satisa acar.
+# Expected: HTTP 200 OK + status: Available
+# @name getAvailableTicketAfterRefund
+GET {{baseUrl}}/api/v1/tickets/{{reserveFirstTicket.response.body.$.ticketId}}
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 17 - Ayni koltuk tekrar reserve edilebilir
+# Refund sonrasi ayni ticket tekrar Redis lock ile rezerve edilebilmelidir.
+# Expected: HTTP 201 Created + expiresAt
+# @name reserveRefundedTicketAgain
+POST {{baseUrl}}/api/v1/tickets/{{reserveFirstTicket.response.body.$.ticketId}}/reserve
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### ==================================================
+### SENARYO 3 - RACE CONDITION KORUMASI
+### ==================================================
+
+### Adim 18 - Ikinci kullanici kaydi
+# Ayni ticket'i farkli kullanici ile almaya calismak icin ikinci hesap olusturulur.
+# Expected: HTTP 201 Created + userId
+# @name registerSecondaryUser
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{secondaryEmail}}",
+  "password": "{{password}}",
+  "fullName": "E2E Test User 2"
+}
+
+### Adim 19 - Ikinci kullanici login
+# Ikinci kullanicinin accessToken degeri conflict senaryosunda kullanilir.
+# Expected: HTTP 200 OK + accessToken
+# @name loginSecondaryUser
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{secondaryEmail}}",
+  "password": "{{password}}"
+}
+
+### Adim 20 - Ikinci kullanici ayni koltugu almaya calisir
+# Ilk kullanicinin Redis lock'i devam ettigi icin ikinci reserve reddedilmelidir.
+# Expected: HTTP 409 Conflict
+# @name reserveLockedTicketAsSecondUser
+POST {{baseUrl}}/api/v1/tickets/{{reserveFirstTicket.response.body.$.ticketId}}/reserve
+Authorization: Bearer {{loginSecondaryUser.response.body.$.accessToken}}
+
+### ==================================================
+### SENARYO 4 - WAITING ROOM
+### ==================================================
+
+### Adim 21 - Checkout kapasitesini doldur
+# Bu senaryo BookingSettings:MaxCheckoutCapacity=1 ile calistirilir; ilk kullanici direkt gecis alarak kapasiteyi doldurur.
+# Expected: HTTP 201 Created + position: 0 + canProceedDirectly: true
+# @name joinQueuePrimaryUser
+POST {{baseUrl}}/api/v1/queue/{{eventId}}/join
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 22 - Ikinci kullanici kuyruga girer
+# Kapasite dolu oldugu icin ikinci kullanici waitingroom sorted set'ine eklenir.
+# Expected: HTTP 201 Created + position: 1 + canProceedDirectly: false
+# @name joinQueueSecondaryUser
+POST {{baseUrl}}/api/v1/queue/{{eventId}}/join
+Authorization: Bearer {{loginSecondaryUser.response.body.$.accessToken}}
+
+### Adim 23 - Pozisyon sorgula
+# Ikinci kullanicinin kuyruk pozisyonu 1 olarak gorunmelidir.
+# Expected: HTTP 200 OK + position: 1
+# @name getSecondaryQueuePosition
+GET {{baseUrl}}/api/v1/queue/{{eventId}}/position
+Authorization: Bearer {{loginSecondaryUser.response.body.$.accessToken}}
+
+### Adim 24 - SSE stream ac
+# Bu istegi ana sirali akis yerine ayri calistir; SSE baglantisi bilincli olarak acik kalir.
+# VS/Rider uzun sure acik kalan SSE istegini stream olarak gosterir; terminal alternatifi asagidadir.
+# Expected: HTTP 200 OK + Content-Type: text/event-stream
+# CMD: curl -N -H "Authorization: Bearer {{loginSecondaryUser.response.body.$.accessToken}}" {{baseUrl}}/api/v1/sse/user
+# @name openUserSseStream
+GET {{baseUrl}}/api/v1/sse/user
+Authorization: Bearer {{loginSecondaryUser.response.body.$.accessToken}}
+Accept: text/event-stream
+
+### ==================================================
+### SENARYO 5 - HATA SENARYOLARI
+### ==================================================
+
+### Adim 25 - Token'siz korumali istek
+# GetTicketById public oldugu icin token'siz 401 kontrolu korumali Reserve endpoint'i uzerinden yapilir.
+# Reserve endpoint'i authorization zorunlu oldugu icin token olmadan reddedilir.
+# Expected: HTTP 401 Unauthorized
+# @name reserveWithoutToken
+POST {{baseUrl}}/api/v1/tickets/{{ticketId2}}/reserve
+
+### Adim 26 - Olmayan ticket
+# Sistemde olmayan ticket id icin detay sorgusu NotFound doner.
+# Expected: HTTP 404 Not Found
+# @name getMissingTicket
+GET {{baseUrl}}/api/v1/tickets/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+### Adim 27.01 - Rate limit testi 1
+# Bu bolumu auth rate limit penceresi sifirlandiktan sonra arka arkaya calistir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.02 - Rate limit testi 2
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.03 - Rate limit testi 3
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.04 - Rate limit testi 4
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.05 - Rate limit testi 5
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.06 - Rate limit testi 6
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.07 - Rate limit testi 7
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.08 - Rate limit testi 8
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.09 - Rate limit testi 9
+# Hatali login auth kotasini tuketir.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.10 - Rate limit testi 10
+# Auth policy PermitLimit 10 oldugu icin bu istek kotayi doldurur.
+# Expected: HTTP 401 Unauthorized
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 27.11 - Rate limit testi 11
+# Ayni IP ve pencere icinde 11. auth istegi rate limiter tarafindan reddedilir.
+# Expected: HTTP 429 Too Many Requests
+# @name authRateLimitRejected
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@test.com",
+  "password": "wrong"
+}
+
+### Adim 28 - Duplicate idempotency key ayni response doner
+# Ayni idempotencyKey tekrar kullanildiginda yeni payment acilmaz, onceki paymentId doner.
+# Expected: HTTP 201 Created + paymentId onceki initiatePayment.response.body.paymentId ile ayni
+# @name duplicateIdempotencyKey
+POST {{baseUrl}}/api/v1/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{loginPrimaryUser.response.body.$.accessToken}}
+
+{
+  "ticketId": "{{ticketId2}}",
+  "provider": "Stripe",
+  "idempotencyKey": "{{paymentIdempotencyKey}}"
+}
+
+### ==================================================
+### TEST SONUCLARI OZETI
+### ==================================================
+# | Senaryo       | Adim                    | Beklenen       | Kritik mi? |
+# |---------------|-------------------------|----------------|------------|
+# | Rezervasyon   | Reserve                 | 201 Created    | Evet       |
+# | Rezervasyon   | Odeme sonrasi Confirmed | 200 Confirmed  | Evet       |
+# | Iade          | Refund sonrasi Available| 200 Available  | Evet       |
+# | Race condition| Ikinci reserve          | 409 Conflict   | Evet       |
+# | Waiting room  | Join                    | position: 1    | Evet       |
+# | Guvenlik      | Token'siz               | 401 Unauthorized| Evet      |
+# | Rate limit    | 11. istek               | 429 Too Many Requests | Evet |
