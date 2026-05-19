@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-P18 Performance optimizasyonu tamamlandi. Siradaki aktif görev: P19 — Smoke Test + E2E.
+Code review duzeltmeleri tamamlandi. Aktif görev: P18 Smoke Test + E2E.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -19,7 +19,7 @@ ve published Event kaydÄ± idempotent olarak oluÅŸturuluyor; ticket seed yok.
 - [x] http-client.env.json baseUrl http://localhost:5001 yapÄ±ldÄ±
 
 ## Sıradaki Prompt
-P19 — Smoke Test + E2E
+P18 Smoke Test + E2E
 
 ## Ã‡Ä±karÄ±lan Promptlar (ve neden)
 - Ocelot Gateway â†’ monolith'te gereksiz; microservice'e geÃ§ince
@@ -82,5 +82,8 @@ Security hardening ve built-in RateLimiter tamamlandi. TicketGate.API host seviy
 
 ## Son Tamamlanan Ara Gorev
 Performance optimizasyonu tamamlandi. Tum handler'lar EF Core tracking ve Include kullanimi acisindan tarandi; query handler'lar AsNoTracking/projection-first durumda, command handler'daki InitiatePayment AsNoTracking kullanimi kaldirildi. Event modulu icin Redis cache-aside servisi eklendi; GetEventById cache hit/miss akisi, UpdateEvent/PublishEvent invalidation ve PublishEvent output cache tag evict davranisi test edildi. TicketGate.API response compression ve output cache middleware'leriyle guncellendi; event listesi 60sn output cache policy'sine baglandi ve cache/pool sureleri appsettings uzerinden okunuyor.
+
+## Son Tamamlanan Ara Gorev
+Smoke Test + E2E `.http` senaryolari tamamlandi. `src/TicketGate.API/Http/e2e.http` Register, Login, seed Event, ticket generate, seat listesi, reserve, payment, OutboxWorker sonrasi Confirmed, refund sonrasi Available, tekrar reserve, race condition, waiting room, auth/rate-limit ve duplicate idempotency key akislarini sirali response chaining ile belgeliyor. Her adimda Turkce yorum ve beklenen HTTP sonucu var. Opsiyonel xUnit E2E projesi ve CI adimi eklenmedi; bu prompt icin VS/Rider `.http` destegi yeterli kabul edildi.
 
 

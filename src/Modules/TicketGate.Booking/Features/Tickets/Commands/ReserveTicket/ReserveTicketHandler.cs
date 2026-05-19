@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
@@ -14,18 +15,19 @@ namespace TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 
 /// <summary>
 /// Bilet rezervasyon komutunu isler. Redis SETNX ile atomik kilit alir ve TTL'i BookingSettings uzerinden uygular.
-/// Ayni bilete es zamanli istek gelirse 409 doner. Kilit alindiktan sonra PostgreSQL'e yazar; hata olursa kilidi geri birakir.
-/// xmin token ile optimistic concurrency cakismasi da yakalanir.
+/// Ayni bilete es zamanli istek gelirse 409 doner.
+/// finally blogu ile basarisiz tum hata yollarinda owned lock temizlenir; ghost lock problemi engellenir.
 /// </summary>
 internal sealed class ReserveTicketHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
     IPublisher publisher,
-    IOptions<BookingSettings> settings) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
+    IOptions<BookingSettings> settings,
+    ILogger<ReserveTicketHandler> logger) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
 {
     /// <summary>
     /// Rezervasyon akisini Redis lock, PostgreSQL state kontrolu, domain state gecisi ve event publish adimlariyla yurutur.
-    /// Redis SETNX race condition'i engeller; TTL suresi appsettings BookingSettings:LockTtlSeconds degerinden okunur.
+    /// Basarisiz olursa finally blogunda lock geri birakilir. Beklenmedik exception tipleri yakalanarak ghost lock engellenir.
     /// </summary>
     public async Task<Result<ReserveTicketResponse>> Handle(
         ReserveTicketCommand request,
@@ -35,6 +37,7 @@ internal sealed class ReserveTicketHandler(
         var lockKey = ToLockKey(request.TicketId);
         var lockValue = request.UserId.ToString();
         var lockTtl = TimeSpan.FromSeconds(settings.Value.LockTtlSeconds);
+        var success = false;
         var lockTaken = await redisDb.StringSetAsync(lockKey, lockValue, lockTtl, When.NotExists);
 
         if (!lockTaken)
@@ -51,14 +54,12 @@ internal sealed class ReserveTicketHandler(
 
             if (ticket is null)
             {
-                await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
                 TicketGateMetrics.TicketReservations.WithLabels("not_found").Inc();
                 return Result<ReserveTicketResponse>.Fail(AppError.NotFound("Ticket", request.TicketId));
             }
 
             if (ticket.Status != TicketStatus.Available)
             {
-                await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
                 TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
                 return Result<ReserveTicketResponse>.Fail(AppError.Conflict(
                     "ticket.not_available",
@@ -75,6 +76,7 @@ internal sealed class ReserveTicketHandler(
 
             TicketGateMetrics.TicketReservations.WithLabels("success").Inc();
             TicketGateMetrics.IncrementActiveLocks();
+            success = true;
 
             return Result<ReserveTicketResponse>.Ok(new ReserveTicketResponse(
                 ticket.Id,
@@ -84,9 +86,26 @@ internal sealed class ReserveTicketHandler(
         }
         catch (DbUpdateConcurrencyException)
         {
-            await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
             TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
             return Result<ReserveTicketResponse>.Fail(AppError.ConcurrencyConflict());
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Rezervasyon hatasi: {TicketId}", request.TicketId);
+            TicketGateMetrics.TicketReservations.WithLabels("error").Inc();
+
+            return Result<ReserveTicketResponse>.Fail(new AppError(
+                AppErrorType.Internal,
+                "ticket.reservation_failed",
+                "Rezervasyon sirasinda beklenmedik bir hata olustu."));
+        }
+        finally
+        {
+            if (!success)
+            {
+                await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
+                logger.LogDebug("Lock geri birakildi: {TicketId}", request.TicketId);
+            }
         }
     }
 

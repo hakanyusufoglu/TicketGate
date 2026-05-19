@@ -1,7 +1,10 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Entities;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
@@ -116,6 +119,41 @@ public sealed class ReserveTicketIntegrationTests : BookingIntegrationTestBase
     }
 
     /// <summary>
+    /// Beklenmedik PostgreSQL hatasinda Result.Fail donuldugunu ve Redis lock'un temizlendigini dogrular.
+    /// Bu senaryo yakalanmazsa ticket lock TTL boyunca ghost lock olarak kalir.
+    /// </summary>
+    [Fact]
+    public async Task Handle_UnexpectedDatabaseError_ReleasesRedisLock()
+    {
+        await ResetAsync();
+        var ticketId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var redis = Services.GetRequiredService<IConnectionMultiplexer>();
+        var services = new ServiceCollection();
+        services.AddDbContext<BookingDbContext>(options =>
+        {
+            options.UseNpgsql("Host=127.0.0.1;Port=1;Database=ticketgate_missing;Username=postgres;Password=postgres;Timeout=1;Command Timeout=1");
+            options.UseSnakeCaseNamingConvention();
+        });
+        services.AddSingleton(redis);
+        services.AddSingleton(Options.Create(new BookingSettings()));
+        services.AddLogging();
+        services.AddMediatR(configuration =>
+            configuration.RegisterServicesFromAssembly(typeof(BookingModule).Assembly));
+        await using var provider = services.BuildServiceProvider();
+        var sender = provider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(new ReserveTicketCommand(ticketId, userId), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNull();
+        result.Error!.Type.Should().Be(AppErrorType.Internal);
+
+        var exists = await redis.GetDatabase().KeyExistsAsync($"ticket:{ticketId}:lock");
+        exists.Should().BeFalse();
+    }
+
+    /// <summary>
     /// Test bileti olusturur ve PostgreSQL'e kaydeder.
     /// Handler'in gercek EF Core tracking ve xmin davranisiyla calismasi icin seed islemi DbContext uzerinden yapilir.
     /// </summary>
@@ -141,4 +179,5 @@ public sealed class ReserveTicketIntegrationTests : BookingIntegrationTestBase
         var sender = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
         return await sender.Send(command);
     }
+
 }

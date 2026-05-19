@@ -156,8 +156,9 @@ public sealed class QueueDispatcher(
     }
 
     /// <summary>
-    /// Dispatcher turu sonrasi kuyrukta kalan kullanicilarin yeni pozisyonlarini yayinlar.
-    /// ZPOPMIN sonrasi sira degistigi icin UI polling yapmadan queue_position eventi alir.
+    /// Kuyrukta kalan kullanicilarin pozisyon bildirimlerini batch olarak yayinlar.
+    /// Tum Sorted Set'i tek seferde bellege almak yerine ayarli batch boyutu kadar okur ve OOM riskini engeller.
+    /// Her batch arasinda kisa bekleme ile worker'in diger event'lere firsat vermesini saglar.
     /// </summary>
     private async Task PublishRemainingPositionsAsync(
         IDatabase db,
@@ -165,8 +166,8 @@ public sealed class QueueDispatcher(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var remainingUsers = await db.SortedSetRangeByRankAsync(ToWaitingRoomKey(eventId), order: Order.Ascending);
-        var total = remainingUsers.LongLength;
+        var waitingRoomKey = ToWaitingRoomKey(eventId);
+        var total = await db.SortedSetLengthAsync(waitingRoomKey);
         TicketGateMetrics.WaitingRoomDepth.WithLabels(eventId.ToString()).Set(total);
 
         if (total == 0)
@@ -176,17 +177,56 @@ public sealed class QueueDispatcher(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+        var batchSize = Math.Max(1, settings.Value.QueuePositionPublishBatchSize);
+        var batchDelay = TimeSpan.FromMilliseconds(Math.Max(0, settings.Value.QueuePositionPublishDelayMilliseconds));
+        long start = 0;
 
-        for (var index = 0; index < remainingUsers.Length; index++)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var value = remainingUsers[index].ToString();
-            if (Guid.TryParse(value, out var parsedUserId))
+            var batch = await db.SortedSetRangeByRankAsync(
+                waitingRoomKey,
+                start,
+                start + batchSize - 1,
+                Order.Ascending);
+
+            if (batch.Length == 0)
             {
-                await publisher.Publish(
-                    new QueuePositionChanged(eventId, parsedUserId, Position: index + 1, Total: total),
-                    cancellationToken);
+                break;
             }
+
+            for (var index = 0; index < batch.Length; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var value = batch[index].ToString();
+                if (!Guid.TryParse(value, out var parsedUserId))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await publisher.Publish(
+                        new QueuePositionChanged(eventId, parsedUserId, Position: start + index + 1, Total: total),
+                        cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Pozisyon bildirimi hatasi: {UserId}", value);
+                }
+            }
+
+            start += batch.Length;
+
+            if (batch.Length < batchSize)
+            {
+                break;
+            }
+
+            await Task.Delay(batchDelay, cancellationToken);
         }
     }
 

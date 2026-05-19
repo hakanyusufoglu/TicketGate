@@ -1,4 +1,36 @@
-﻿## SON HANDOFF - 2026-05-18 CI GitHub Actions + Disabled CD Roadmap
+﻿## SON HANDOFF - 2026-05-19 Smoke Test + E2E
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; aktif gorevin P19 Smoke Test + E2E oldugu dogrulandi.
+- Mevcut `.http` dosyalari ve endpoint route/response sozlesmeleri incelendi.
+- `src/TicketGate.API/Http/e2e.http` eklendi.
+- Register -> Login -> Event list/detail -> Ticket generate -> Seats -> Reserve -> Payment initiate -> OutboxWorker bekleme -> Payment Completed -> Ticket Confirmed akisi response chaining ile yazildi.
+- Refund -> Payment Refunded -> Ticket Available -> ayni ticket tekrar reserve akisi eklendi.
+- Ikinci kullanici ile ayni ticket reserve denemesi 409 Conflict race condition smoke senaryosu olarak eklendi.
+- Waiting room, token'siz istek, olmayan ticket, auth rate limit ve duplicate idempotency key senaryolari eklendi.
+- Her HTTP isteginde Turkce yorum ve beklenen HTTP sonucu belirtildi.
+- `.agent/MEMORY.md` ve `.agent/CONTEXT.md` P19 tamamlandi, aktif gorev README hazirligi olacak sekilde guncellendi.
+
+### Dogrulama
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, 21 mevcut NuGet/security/pruning uyarisi.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili; Booking 28/28, Event 13/13, Identity 10/10, Payment 19/19, Notification 3/3, API 3/3.
+
+### Dikkat
+- Kullanici `commit atma` dedi; commit/stage/push yapilmadi.
+- Opsiyonel xUnit E2E projesi ve CI E2E adimi eklenmedi; bu promptta VS/Rider `.http` destegi yeterli kabul edildi.
+- Waiting room kuyruga alma senaryosu icin `BookingSettings:MaxCheckoutCapacity=1` gerekir; mevcut development ayari 10 ise ikinci kullanici direkt gecis alabilir.
+- Rate limit bolumu onceki auth isteklerinden etkilenebilir; temiz pencere veya ayri calistirma ile 11. istek 429 beklenir.
+
+### Siradaki Gorev
+README hazirligi
+
+---
+
+## SON HANDOFF - 2026-05-18 CI GitHub Actions + Disabled CD Roadmap
 
 ### Proje
 TicketGate - bilet satis platformu
@@ -638,5 +670,39 @@ TicketGate - bilet satis platformu
 
 ### Siradaki Gorev
 P19 - Smoke Test + E2E
+
+---
+## SON HANDOFF - 2026-05-19 Code Review Duzeltmeleri
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; review gorevi uc bulgu ile sinirli tutuldu.
+- Payment InitiatePayment akisi guncellendi: UserId endpoint katmaninda JWT claim'den okunup `InitiatePaymentCommand` icine veriliyor.
+- `InitiatePaymentHandler` icinden `IHttpContextAccessor` kaldirildi; handler HTTP context bagimliligi olmadan calisiyor.
+- `InitiatePaymentRequest` body modeli eklendi; request body artik UserId tasimiyor.
+- ReserveTicket ghost lock sorunu giderildi: beklenmeyen DB exception'lari Result internal hata olarak donuyor ve finally blogunda owned Redis lock temizleniyor.
+- QueueDispatcher `PublishRemainingPositionsAsync` tum Sorted Set'i tek seferde cekmek yerine ayarli batch boyutuyla okuyor; batch arasi delay appsettings uzerinden yonetiliyor.
+- Payment ve Booking testleri handler bagimsizligi ve ghost lock davranisini kapsayacak sekilde guncellendi.
+- Kullanici `commit atma` dedigi icin commit/stage/push yapilmadi.
+
+### Dogrulama
+- RED: Payment testleri once `InitiatePaymentCommand` 4 parametre bekledigi icin derlemede fail verdi.
+- RED: Booking ghost lock testi once beklenmeyen PostgreSQL hatasinin handler'dan firladigini yakaladi.
+- GREEN: `dotnet test tests\TicketGate.Payment.Tests\TicketGate.Payment.Tests.csproj --no-restore -v minimal --filter InitiatePaymentTests` basarili, 5/5.
+- GREEN: `dotnet test tests\TicketGate.Booking.Tests\TicketGate.Booking.Tests.csproj --no-restore -v minimal --filter ReserveTicketIntegrationTests.Handle_UnexpectedDatabaseError_ReleasesRedisLock` basarili, 1/1.
+- GREEN: `dotnet test tests\TicketGate.Booking.Tests\TicketGate.Booking.Tests.csproj --no-restore -v minimal --filter WaitingRoomTests.Dispatcher_PublishesUpdatedPosition_ForRemainingUsers` basarili, 1/1.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, mevcut NuGet/security/pruning uyarilari devam ediyor.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili; Booking 29/29, Event 13/13, Identity 10/10, Payment 18/18, Notification 3/3, API 3/3.
+
+### Dikkat
+- `.agent` dosyalari ve `src/TicketGate.API/Http/e2e.http` session basinda zaten dirty durumdaydi; geri alinmadi.
+- Queue position batch ayarlari `BookingSettings:QueuePositionPublishBatchSize` ve `BookingSettings:QueuePositionPublishDelayMilliseconds` ile config'e tasindi.
+- Mevcut transitive NuGet vulnerability uyarilari devam ediyor; bu session'da cozulmedi.
+
+### Siradaki Gorev
+P18 Smoke Test + E2E
 
 ---

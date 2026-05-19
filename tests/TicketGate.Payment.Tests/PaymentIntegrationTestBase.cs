@@ -1,10 +1,8 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Security.Claims;
 using TicketGate.Core.Contracts;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
@@ -23,7 +21,6 @@ public abstract class PaymentIntegrationTestBase : IntegrationTestBase
 {
     private readonly FakeTicketReservationReader _ticketReservationReader = new();
     private readonly FakePaymentGateway _paymentGateway = new();
-    private readonly HttpContextAccessor _httpContextAccessor = new();
 
     /// <summary>
     /// Payment testleri icin gerekli servisleri kaydeder.
@@ -39,7 +36,6 @@ public abstract class PaymentIntegrationTestBase : IntegrationTestBase
 
         services.AddSingleton(Options.Create(new OutboxSettings()));
         services.AddSingleton<ITicketReservationReader>(_ticketReservationReader);
-        services.AddSingleton<IHttpContextAccessor>(_httpContextAccessor);
         services.AddSingleton<IPaymentGateway>(_paymentGateway);
         services.AddLogging();
 
@@ -84,43 +80,6 @@ public abstract class PaymentIntegrationTestBase : IntegrationTestBase
     protected void ClearReservedTickets()
     {
         _ticketReservationReader.Clear();
-    }
-
-    /// <summary>
-    /// Test request'i icin JWT NameIdentifier claim'ini HttpContextAccessor uzerinden kurar.
-    /// Payment handler userId bilgisini body yerine bu claim'den okumak zorundadir.
-    /// </summary>
-    protected void SetCurrentUser(Guid userId)
-    {
-        _httpContextAccessor.HttpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(
-                [new Claim(ClaimTypes.NameIdentifier, userId.ToString())],
-                "TestAuth"))
-        };
-    }
-
-    /// <summary>
-    /// Test request'i icin JWT sub claim'ini HttpContextAccessor uzerinden kurar.
-    /// Login token'i kullanici id bilgisini standart subject claim'iyle tasidigi icin handler bunu okuyabilmelidir.
-    /// </summary>
-    protected void SetCurrentUserSubject(Guid userId)
-    {
-        _httpContextAccessor.HttpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(
-                [new Claim("sub", userId.ToString())],
-                "TestAuth"))
-        };
-    }
-
-    /// <summary>
-    /// Test request'i icin kimlik bilgisini temizler.
-    /// Unauthorized senaryosu body'den userId kabul edilmedigini dogrulamak icin kullanilir.
-    /// </summary>
-    protected void ClearCurrentUser()
-    {
-        _httpContextAccessor.HttpContext = new DefaultHttpContext();
     }
 
     /// <summary>

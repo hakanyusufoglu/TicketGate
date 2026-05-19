@@ -60,7 +60,10 @@
 - [x] Response compression
 - [x] Output cache (event list)
 - [x] Connection pool ayarı
-- [ ] Production promptları — P12-P19
+- [x] E2E test senaryolari tamamlandi
+- [x] e2e.http olusturuldu
+- [x] Tum promptlar tamamlandi!
+- [x] Production promptları — P12-P19
 
 ## Çıkarılan / Ertelenen Kararlar
 
@@ -135,7 +138,7 @@
 | P16 | Environment yönetimi + Secrets | ⏳ |
 | P17 | Security hardening + Built-in RateLimiter | ✅ |
 | P18 | Performance optimizasyonu | ✅ |
-| P19 | Smoke test + E2E test | ⏳ |
+| P19 | Smoke test + E2E test | ✅ |
 
 ## Stack (hızlı referans)
 
@@ -373,3 +376,29 @@
 | 2026-05-19 | Event cache TTL degerleri EventCacheSettings'e tasindi | AGENTS.md magic number yasagi nedeniyle Redis ve output cache sureleri kod icinde sabit tutulmadi |
 | 2026-05-19 | Event output cache policy adi Event modulu sabitinde tutuldu | Endpoint ve API host ayni policy/tag adini kullanirken magic string tekrarini engeller |
 | 2026-05-19 | GetAvailableSeats seat parsing korundu | Booking ticket tablosunda section/row/seat_number kolonlari yok; mevcut SeatCode projection ve parsing davranisi schema degistirmeden performansli kalir |
+
+## 2026-05-19 Smoke Test + E2E Notu
+
+- [x] `src/TicketGate.API/Http/e2e.http` olusturuldu.
+- [x] Register -> Login -> Event -> Generate -> Seats -> Reserve -> Payment -> Confirm -> Refund -> Available akisi sirali response chaining ile yazildi.
+- [x] Race condition, waiting room, token'siz istek, olmayan ticket, rate limit ve duplicate idempotency key smoke senaryolari eklendi.
+- [x] Her HTTP adiminda Turkce yorum ve beklenen HTTP sonucu belirtildi.
+- [x] Opsiyonel xUnit E2E projesi ve CI E2E adimi eklenmedi; bu promptta VS/Rider `.http` destegi yeterli kabul edildi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-19 | E2E kapsami `.http` dosyasi ile sinirlandi | Kullanici ekstra araca gerek olmadigini ve VS/Rider `.http` desteginin yeterli oldugunu belirtti |
+| 2026-05-19 | Waiting room senaryosu MaxCheckoutCapacity=1 notuyla belgelendi | Mevcut development ayari 10; kuyruk davranisini manuel smoke testte gormek icin kapasite dusurulmeli |
+
+## 2026-05-19 Code Review Duzeltmeleri Notu
+
+- [x] Code review duzeltmeleri tamamlandi
+- [x] Ghost Lock engellendi
+- [x] Handler HTTP bagimsizligi saglandi
+- [x] QueueDispatcher OOM riski giderildi
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-19 | InitiatePayment UserId command'e tasindi | Handler HTTP context'e bagimli kalmadan test, CLI ve worker ortamindan cagrilabilmeli |
+| 2026-05-19 | ReserveTicket beklenmeyen DB hatasinda owned lock siliyor | Redis lock alindiktan sonra DB hatasi olursa ticket TTL boyunca ghost lock durumunda kalmamali |
+| 2026-05-19 | Queue position publish batch okuma kullaniyor | Waiting room Sorted Set'in tamamini bellege almak yuksek kuyruklarda OOM riski olusturur |

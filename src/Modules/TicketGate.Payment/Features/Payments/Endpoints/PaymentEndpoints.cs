@@ -26,11 +26,17 @@ public static class PaymentEndpoints
         var group = app.MapGroup("/api/v1/payments").WithTags("Payments");
 
         group.MapPost("/initiate", async (
-            InitiatePaymentCommand command,
+            InitiatePaymentRequest request,
             ISender sender,
+            HttpContext context,
             CancellationToken cancellationToken) =>
         {
-            var result = await sender.Send(command, cancellationToken);
+            var userId = context.GetUserId();
+            var result = await sender.Send(new InitiatePaymentCommand(
+                request.TicketId,
+                userId,
+                request.Provider,
+                request.IdempotencyKey), cancellationToken);
             return result.ToHttpResult(StatusCodes.Status201Created);
         })
             .WithName("InitiatePayment")
@@ -95,3 +101,9 @@ public static class PaymentEndpoints
         return app;
     }
 }
+
+/// <summary>Odeme baslatma HTTP request body'si.</summary>
+public sealed record InitiatePaymentRequest(
+    Guid TicketId,
+    string Provider,
+    string IdempotencyKey);

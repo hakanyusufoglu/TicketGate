@@ -26,10 +26,9 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         await ResetAsync();
         var ticketId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        SetReservedTicket(ticketId, userId, 725m);
-        SetCurrentUser(userId);
 
-        var command = new InitiatePaymentCommand(ticketId, "Stripe", "payment-key-1");
+        SetReservedTicket(ticketId, userId, 725m);
+        var command = new InitiatePaymentCommand(ticketId, userId, "Stripe", "payment-key-1");
 
         var result = await SendScopedAsync(command);
 
@@ -56,22 +55,22 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
     }
 
     /// <summary>
-    /// Login token'indaki standart sub claim'i ile odeme baslatilabildigini dogrular.
-    /// Swagger/JWT akisi NameIdentifier map'ine bagimli kalmadan calismalidir.
+    /// Command icindeki UserId ile odeme baslatilabildigini dogrular.
+    /// Handler HttpContextAccessor bagimliligi olmadan test ve worker ortaminda calisabilmelidir.
     /// </summary>
     [Fact]
-    public async Task Handle_SubjectClaim_CreatesPaymentAndOutbox()
+    public async Task Handle_CommandUserId_CreatesPaymentAndOutbox()
     {
         await ResetAsync();
         var ticketId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         SetReservedTicket(ticketId, userId);
-        SetCurrentUserSubject(userId);
 
         var result = await SendScopedAsync(new InitiatePaymentCommand(
             ticketId,
+            userId,
             "Stripe",
-            "payment-key-sub"));
+            "payment-key-command-user"));
 
         result.IsSuccess.Should().BeTrue();
 
@@ -92,8 +91,7 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         var ticketId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         SetReservedTicket(ticketId, userId);
-        SetCurrentUser(userId);
-        var command = new InitiatePaymentCommand(ticketId, "Stripe", "payment-key-2");
+        var command = new InitiatePaymentCommand(ticketId, userId, "Stripe", "payment-key-2");
 
         var first = await SendScopedAsync(command);
         var second = await SendScopedAsync(command);
@@ -118,10 +116,11 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
     {
         await ResetAsync();
         ClearReservedTickets();
-        SetCurrentUser(Guid.NewGuid());
+        var userId = Guid.NewGuid();
 
         var result = await SendScopedAsync(new InitiatePaymentCommand(
             Guid.NewGuid(),
+            userId,
             "Stripe",
             "payment-key-3"));
 
@@ -141,10 +140,11 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
         await ResetAsync();
         var ticketId = Guid.NewGuid();
         SetReservedTicket(ticketId, Guid.NewGuid());
-        SetCurrentUser(Guid.NewGuid());
+        var userId = Guid.NewGuid();
 
         var result = await SendScopedAsync(new InitiatePaymentCommand(
             ticketId,
+            userId,
             "Stripe",
             "payment-key-4"));
 
@@ -155,29 +155,6 @@ public sealed class InitiatePaymentTests : PaymentIntegrationTestBase
     }
 
     /// <summary>
-    /// JWT NameIdentifier claim'i yoksa odeme baslatmanin 401 dondugunu dogrular.
-    /// UserId body'den alinmadigi icin kimliksiz request payment olusturmamalidir.
-    /// </summary>
-    [Fact]
-    public async Task Handle_MissingUserClaim_Returns401()
-    {
-        await ResetAsync();
-        ClearCurrentUser();
-
-        var result = await SendScopedAsync(new InitiatePaymentCommand(
-            Guid.NewGuid(),
-            "Stripe",
-            "payment-key-5"));
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().NotBeNull();
-        result.Error!.Type.Should().Be(AppErrorType.Unauthorized);
-
-        using var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-        (await db.Payments.CountAsync()).Should().Be(0);
-    }
-
     /// <summary>
     /// Command'i yeni DI scope icinde gonderir.
     /// Her istek ayri PaymentDbContext kullanarak production request scope davranisini taklit eder.
