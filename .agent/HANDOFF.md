@@ -740,3 +740,35 @@ TicketGate - bilet satis platformu
 P18 Smoke Test + E2E
 
 ---
+## SON HANDOFF - 2026-05-20 Mediator Pipeline Lifetime Fix
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; mevcut aktif gorev README hazirligi gorunse de bu oturumdaki oncelik Mediator pipeline lifetime hatasi olarak ele alindi.
+- Kok neden dogrulandi: `ValidationBehavior<,>` her modulde degil, `TicketGate.Core.Extensions.ModuleExtensions.AddModules` icinde tek merkezi noktada `AddSingleton(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))` ile kayitliydi.
+- Modullere yeni pipeline kaydi eklenmedi; bu AGENTS.md'deki "ValidationBehavior yalnizca bir kez merkezi kaydedilir" kuralina aykiri olurdu.
+- Merkezi kayit `AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>))` olarak guncellendi.
+- `ModuleExtensions` icin eksik Turkce XML summary'ler eklendi.
+- Identity testlerine `AddModules_ShouldRegisterValidationBehaviorAsScoped` regresyon testi eklendi.
+- Kullanici `commit atma` dedigi icin commit/stage/push yapilmadi.
+
+### Dogrulama
+- RED: `dotnet test tests\TicketGate.Identity.Tests\TicketGate.Identity.Tests.csproj --no-restore --filter AddModules_ShouldRegisterValidationBehaviorAsScoped -v minimal` once fail verdi; beklenen `Scoped`, mevcut `Singleton`.
+- GREEN: ayni test fix sonrasi basarili oldu.
+- Ilk `dotnet build TicketGate.sln --no-restore -v minimal` kosusu calisan `TicketGate.API (74944)` bin klasorundeki DLL'leri kilitledigi icin fail verdi; API sureci durduruldu.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, 0 hata; mevcut NuGet vulnerability/pruning ve Mediator MSG0005 uyarilari devam ediyor.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: 5 dakikalik tool timeout'a takildi; tamamlanmis sonuc alinmadi.
+- Test projeleri tek tek calistirildi ve basarili oldu: Identity 11/11, API 3/3, Notification 3/3, Event 13/13, Booking 29/29, Payment 18/18.
+
+### Dikkat
+- Full solution test komutunun timeout sebebi kod fail'i olarak kanitlanmadi; tek tek kosularda tum test projeleri gecti. Booking testleri tek basina 3m26s surdugu icin toplam sure 5 dakikalik tool timeout'unu asabiliyor.
+- Mevcut transitive NuGet vulnerability uyarilari bu session kapsaminda cozulmedi.
+- Swagger/manual login ve bos body ile 422 kontrolu yapilmadi; otomatik test ve build dogrulamasi yapildi.
+
+### Siradaki Gorev
+README hazirligi
+
+---

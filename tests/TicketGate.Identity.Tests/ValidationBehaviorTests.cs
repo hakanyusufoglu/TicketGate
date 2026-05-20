@@ -1,13 +1,40 @@
 using FluentValidation;
 using Mediator;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using TicketGate.Core.Behaviors;
 using TicketGate.Core.Errors;
+using TicketGate.Core.Extensions;
 using TicketGate.Core.Results;
 
 namespace TicketGate.Identity.Tests;
 
 public sealed class ValidationBehaviorTests
 {
+    [Fact]
+    public void AddModules_ShouldRegisterValidationBehaviorAsScoped()
+    {
+        var services = new ServiceCollection();
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Identity"] = "Host=localhost;Database=ticketgate_test;Username=test;Password=test",
+                ["JwtSettings:SecretKey"] = "test-secret-key-that-is-long-enough-for-hmac-sha",
+                ["JwtSettings:Issuer"] = "TicketGate.Tests",
+                ["JwtSettings:Audience"] = "TicketGate.Tests"
+            })
+            .Build();
+
+        services.AddModules(config);
+
+        var descriptor = services.Last(service =>
+            service.ServiceType.IsGenericType &&
+            service.ServiceType.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>));
+
+        Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
+        Assert.Equal(typeof(ValidationBehavior<,>), descriptor.ImplementationType);
+    }
+
     [Fact]
     public async Task Handle_ShouldReturnValidationFailure_WhenValidatorFails()
     {

@@ -411,8 +411,10 @@
 - [x] Endpointlerde `ISender`, handler ve worker publish akislarinda `IPublisher` yerine `IMediator` kullaniliyor.
 - [x] `AddMediatR` ve `AddOpenBehavior` kaldirildi; `AddMediator` host/test seviyesinde, `ValidationBehavior<,>` merkezi pipeline kaydi olarak tutuluyor.
 - [x] Tum Mediator request/notification handler'lari public sealed yapildi ve `ValueTask` tabanli `Handle` imzasina tasindi.
+- [x] Mediator pipeline behavior lifetime fix tamamlandi; `ValidationBehavior<,>` merkezi kaydi singleton yerine scoped yapildi.
 
 | Tarih | Karar | Gerekce |
 |-------|-------|---------|
 | 2026-05-19 | Mediator source generator host projelerinde tutuldu | Generator `AddMediator` kaydini derleme zamaninda urettigi icin API ve integration test host'lari handler assembly'lerini gormeli; module library'lerinde yalnizca abstraction yeterli |
 | 2026-05-19 | ValidationBehavior `IMessage` constraint'i kullaniyor | Mediator `IPipelineBehavior<TMessage,TResponse>` sozlesmesi `TMessage : IMessage` istiyor; MediatR'daki `notnull` constraint'i derlenmiyor |
+| 2026-05-20 | ValidationBehavior scoped lifetime | Mediator pipeline behavior singleton olursa scoped FluentValidation validator'larini consume edemez; merkezi kayit korunup lifetime scoped yapildi |

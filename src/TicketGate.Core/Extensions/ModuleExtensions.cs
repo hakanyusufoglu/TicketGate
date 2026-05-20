@@ -8,8 +8,16 @@ using TicketGate.Core.Contracts;
 
 namespace TicketGate.Core.Extensions;
 
+/// <summary>
+/// Modül discovery, servis kaydı ve endpoint map işlemlerini merkezi olarak sağlar.
+/// Mediator pipeline davranışları tek noktadan kaydedilerek duplicate validation engellenir.
+/// </summary>
 public static class ModuleExtensions
 {
+    /// <summary>
+    /// TicketGate modüllerini bulur, servislerini kaydeder ve validation pipeline'ını scoped lifetime ile ekler.
+    /// Scoped lifetime, FluentValidation validator'larının scoped bağımlılıklarla güvenli çalışmasını sağlar.
+    /// </summary>
     public static IServiceCollection AddModules(this IServiceCollection services, IConfiguration config)
     {
         var modules = DiscoverModules();
@@ -20,11 +28,15 @@ public static class ModuleExtensions
             module.RegisterServices(services, config);
         }
 
-        services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }
 
+    /// <summary>
+    /// Keşfedilen modüllerin endpoint'lerini Minimal API route tablosuna ekler.
+    /// Modüller kendi endpoint sınırlarını korur, host yalnızca map akışını başlatır.
+    /// </summary>
     public static WebApplication MapModules(this WebApplication app)
     {
         foreach (var module in app.Services.GetServices<IModule>())
@@ -35,6 +47,10 @@ public static class ModuleExtensions
         return app;
     }
 
+    /// <summary>
+    /// Çalışma dizinindeki TicketGate assembly'lerini yükleyip IModule implementasyonlarını sıralı döndürür.
+    /// Sıralama deterministik kayıt davranışı sağlar.
+    /// </summary>
     private static IReadOnlyList<IModule> DiscoverModules()
     {
         LoadTicketGateAssemblies();
@@ -51,6 +67,10 @@ public static class ModuleExtensions
             .ToArray();
     }
 
+    /// <summary>
+    /// Henüz yüklenmemiş TicketGate assembly'lerini AppDomain'e ekler.
+    /// Module discovery'nin sadece referans verilen değil, çıktı klasöründeki modülleri de görmesini sağlar.
+    /// </summary>
     private static void LoadTicketGateAssemblies()
     {
         var loadedAssemblyNames = AppDomain.CurrentDomain
@@ -74,6 +94,10 @@ public static class ModuleExtensions
         }
     }
 
+    /// <summary>
+    /// Assembly type bilgilerini güvenli okur; yüklenemeyen tipler varsa kalan geçerli tiplerle devam eder.
+    /// ReflectionTypeLoadException modül keşfini tamamen durdurmamalıdır.
+    /// </summary>
     private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
     {
         try

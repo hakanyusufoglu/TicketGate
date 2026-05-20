@@ -2,7 +2,7 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-MediatR -> Mediator MIT migration tamamlandi. Aktif görev: README hazırlığı.
+Mediator pipeline behavior lifetime fix tamamlandi. Aktif görev: README hazırlığı.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde
@@ -33,6 +33,9 @@ README hazırlığı
 - Her yeni sÄ±nÄ±fa TÃ¼rkÃ§e XML summary zorunlu
 - Built-in RateLimiter (Ocelot yerine) â€” P17'de eklenecek
 - Testcontainers 3.x restore/build aÅŸamasÄ±nda transitive NuGet gÃ¼venlik uyarÄ±larÄ± Ã¼retiyor; ileride paket versiyonu veya major upgrade deÄŸerlendirilmeli
+
+## Son Tamamlanan Ara Gorev
+Mediator pipeline behavior lifetime hatasi giderildi. `ValidationBehavior<,>` merkezi `AddModules` kaydinda singleton yerine scoped yapildi; modullere duplicate pipeline kaydi eklenmedi. Identity testlerine lifetime regresyon testi eklendi. `dotnet build TicketGate.sln --no-restore -v minimal` basarili; full solution test komutu 5 dakika tool timeout'a takildi, ancak test projeleri tek tek calistirildi ve Identity 11/11, API 3/3, Notification 3/3, Event 13/13, Booking 29/29, Payment 18/18 basarili oldu. Commit atilmadi.
 
 ## Son Tamamlanan Ara Gorev
 MediatR bagimliligi Mediator MIT stack'ine tasindi. Library projeleri `Mediator.Abstractions`, API ve integration test host'lari `Mediator.SourceGenerator` kullaniyor. Endpointlerde `IMediator.Send`, handler/worker event akislarinda `IMediator.Publish` kullaniliyor. Tum handler'lar public sealed ve Mediator `ValueTask` imzasina uyumlu. `dotnet restore`, `dotnet build --no-restore` ve `dotnet test --no-build -m:1` basarili; commit atilmadi.
