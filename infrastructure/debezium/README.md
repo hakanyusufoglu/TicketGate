@@ -57,10 +57,3 @@ konfigudur.
 | `transforms.routeByMonth.type` | Topic adini Elasticsearch index adina donusturen TimestampRouter SMT'dir. |
 | `transforms.routeByMonth.topic.format` | Index formatini `ticketgate-${topic}-${timestamp}` yapar. |
 | `transforms.routeByMonth.timestamp.format` | Index tarih suffix'ini `yyyy.MM` formatinda uretir. |
-
-## Neden JSON icine yorum eklenmedi?
-
-Kafka Connect REST API yalnizca gecerli JSON kabul eder. `//`, `/* */` veya
-trailing comma gibi JSON disi notlar connector register ederken hata uretir.
-`_comment` gibi sahte alanlar da connector validation tarafinda bilinmeyen
-config uyarisi veya hatasina yol acabilecegi icin tercih edilmez.
