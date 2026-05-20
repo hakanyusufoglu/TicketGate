@@ -9,6 +9,7 @@ using TicketGate.Booking.Domain.Entities;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Booking.Features.Tickets.Commands.ReserveTicket;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Errors;
 
 namespace TicketGate.Booking.Tests.Features;
@@ -137,6 +138,7 @@ public sealed class ReserveTicketIntegrationTests : BookingIntegrationTestBase
         });
         services.AddSingleton(redis);
         services.AddSingleton(Options.Create(new BookingSettings()));
+        services.AddSingleton<IActiveCheckoutService, ActiveCheckoutService>();
         services.AddLogging();
         services.AddMediator(options =>
             options.ServiceLifetime = ServiceLifetime.Scoped);

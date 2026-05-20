@@ -2,7 +2,10 @@
 # Her session baÅŸÄ±nda oku. Session sonunda gÃ¼ncelle.
 
 ## Aktif Görev
-Mediator pipeline behavior lifetime fix tamamlandi. Aktif görev: README hazırlığı.
+Active checkout leak fix tamamlandi. Aktif görev: README hazırlığı.
+
+## Son Tamamlanan Ara Gorev
+Active checkout sayaci merkezi `IActiveCheckoutService` ile yonetilecek sekilde duzeltildi. `active_checkout:{eventId}` sayaci artik `active_checkout_users:{eventId}` Redis set'i ile kullanici sahipligi tutuyor; INCR/DECR operasyonlari Lua scriptlerle idempotent ve atomik hale getirildi. JoinQueue ve QueueDispatcher dogrudan Redis INCR yapmiyor; ReserveTicket, TicketLockExpiredWorker, PaymentCompleted/Failed/Refunded ve LeaveQueue cikis noktalarinda kapasite geri veriliyor. `dotnet build TicketGate.sln --no-restore -v minimal`, `dotnet test tests/TicketGate.Booking.Tests/TicketGate.Booking.Tests.csproj --no-build -v minimal` ve `dotnet test TicketGate.sln --no-build -v minimal -m:1` basarili. Commit atilmadi.
 
 ## Neden P7 Sonra?
 P5 Booking Ticket + ReserveTicket + Redis Lock tamamlandÄ±. Booking modÃ¼lÃ¼nde

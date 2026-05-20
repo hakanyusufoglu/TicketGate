@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Enums;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Core.Metrics;
@@ -21,6 +22,7 @@ namespace TicketGate.Booking.Infrastructure.Workers;
 public sealed class TicketLockExpiredWorker(
     IConnectionMultiplexer redis,
     IServiceScopeFactory scopeFactory,
+    IActiveCheckoutService activeCheckoutService,
     IOptions<BookingSettings> settings,
     ILogger<TicketLockExpiredWorker> logger) : BackgroundService
 {
@@ -89,7 +91,13 @@ public sealed class TicketLockExpiredWorker(
 
         foreach (var ticket in expiredTickets)
         {
+            var lockedByUserId = ticket.LockedByUserId;
             ticket.Release();
+
+            if (lockedByUserId is not null)
+            {
+                await activeCheckoutService.DecrementAsync(ticket.EventId, lockedByUserId.Value, cancellationToken);
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -123,6 +131,11 @@ public sealed class TicketLockExpiredWorker(
             ticket.Release();
             await db.SaveChangesAsync(cancellationToken);
             TicketGateMetrics.DecrementActiveLocks();
+
+            if (lockedByUserId is not null)
+            {
+                await activeCheckoutService.DecrementAsync(ticket.EventId, lockedByUserId.Value, cancellationToken);
+            }
 
             await mediator.Publish(
                 new TicketReleased(ticket.Id, ticket.EventId, lockedByUserId),

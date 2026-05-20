@@ -2,6 +2,7 @@ using Mediator;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using TicketGate.Booking.Domain.Enums;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 using TicketGate.Core.Metrics;
@@ -15,6 +16,7 @@ namespace TicketGate.Booking.Features.Tickets.EventHandlers;
 public sealed class PaymentFailedHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
+    IActiveCheckoutService activeCheckoutService,
     IMediator mediator) : INotificationHandler<PaymentFailed>
 {
     /// <summary>
@@ -40,6 +42,8 @@ public sealed class PaymentFailedHandler(
         {
             TicketGateMetrics.DecrementActiveLocks();
         }
+
+        await activeCheckoutService.DecrementAsync(ticket.EventId, notification.UserId, cancellationToken);
 
         await mediator.Publish(
             new TicketReleased(ticket.Id, ticket.EventId, releasedUserId),

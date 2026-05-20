@@ -1,4 +1,41 @@
-﻿## SON HANDOFF - 2026-05-19 MediatR -> Mediator MIT Migration
+﻿## SON HANDOFF - 2026-05-20 Active Checkout Leak Fix
+
+### Proje
+TicketGate - bilet satis platformu
+.NET 10 - Moduler Monolith - Vertical Slice Architecture
+
+### Bu Session'da Yapilanlar
+- Baslangicta AGENTS.md, MEMORY.md ve CONTEXT.md okundu; mevcut aktif gorev README hazirligi olsa da bu oturumda active_checkout leak problemi onceliklendirildi.
+- Kok neden dogrulandi: JoinQueueHandler ve QueueDispatcher `active_checkout:{eventId}` sayacini artiriyor, cikis senaryolarinda merkezi ve guvenilir DECR yoktu.
+- `IActiveCheckoutService` ve `ActiveCheckoutService` eklendi.
+- Active checkout sayaci `active_checkout_users:{eventId}` Redis set'i ile kullanici sahipligi tutacak sekilde idempotent hale getirildi.
+- Lua scriptlerle kapasite kontrolu, SADD/INCR, SREM/DECR ve queue grant akislarinda atomiklik korundu.
+- JoinQueueHandler ve QueueDispatcher direkt INCR scriptleri yerine ActiveCheckoutService kullanacak sekilde guncellendi.
+- LeaveQueue toplam sayaca bakarak DECR yapmiyor; yalnizca kullanici aktif checkout sahipligine sahipse kapasite geri veriyor.
+- ReserveTicket basari, conflict ve basarisizlik yollarinda active checkout sahipligini geri veriyor; Redis ticket lock cleanup davranisi korundu.
+- TicketLockExpiredWorker startup recovery ve TTL expire akislarinda active checkout DECR yapiyor.
+- PaymentCompleted, PaymentFailed ve PaymentRefunded handler'lari idempotent DECR cagrilariyla kapasiteyi geri veriyor.
+- `ActiveCheckoutTests` eklendi; idempotent increment, waiting-user leave, reserve fail, TTL expire, payment complete, refund no-negative ve uzun calisma leak senaryolari kapsandi.
+- `.agent/MEMORY.md`, `.agent/CONTEXT.md` ve `.agent/HANDOFF.md` guncellendi.
+
+### Dogrulama
+- RED: `dotnet test tests/TicketGate.Booking.Tests/TicketGate.Booking.Tests.csproj --no-restore -v minimal --filter ActiveCheckoutTests` once `IActiveCheckoutService` olmadigi icin derlemede fail verdi.
+- GREEN: `dotnet test tests/TicketGate.Booking.Tests/TicketGate.Booking.Tests.csproj --no-restore -v minimal --filter ActiveCheckoutTests` basarili, 7/7.
+- `dotnet build TicketGate.sln --no-restore -v minimal`: basarili, 0 hata; mevcut NuGet security/pruning ve Mediator MSG0005 uyarilari devam ediyor.
+- `dotnet test tests/TicketGate.Booking.Tests/TicketGate.Booking.Tests.csproj --no-build -v minimal`: basarili, 36/36.
+- `dotnet test TicketGate.sln --no-build -v minimal -m:1`: basarili; Booking 36/36, Event 13/13, Identity 11/11, Payment 18/18, Notification 3/3, API 3/3.
+
+### Dikkat
+- Kullanici `commit atma` dedi; commit/stage/push yapilmadi.
+- Full solution test uzun surdu; sebep `-m:1` ile test projelerinin seri kosmasi ve Booking/Payment tarafinda Testcontainers ile gercek PostgreSQL/Redis kullanilmasi.
+- ActiveCheckoutService singleton kaydedildi; scoped kayit hosted service constructor bagimliligiyle uyumsuz olurdu. Servis yalnizca singleton Redis multiplexer ve logger kullandigi icin bu tercih guvenli.
+- Mevcut transitive NuGet vulnerability uyarilari bu session kapsaminda cozulmedi.
+
+### Siradaki Gorev
+README hazirligi
+
+---
+## SON HANDOFF - 2026-05-19 MediatR -> Mediator MIT Migration
 
 ### Proje
 TicketGate - bilet satis platformu

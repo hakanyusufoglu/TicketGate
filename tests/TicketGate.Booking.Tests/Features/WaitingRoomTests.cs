@@ -8,6 +8,7 @@ using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Features.WaitingRoom.Commands.JoinQueue;
 using TicketGate.Booking.Features.WaitingRoom.Commands.LeaveQueue;
 using TicketGate.Booking.Features.WaitingRoom.Queries.GetQueuePosition;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Booking.Infrastructure.Workers;
 using TicketGate.Core.Errors;
 
@@ -156,6 +157,7 @@ public sealed class WaitingRoomTests : BookingIntegrationTestBase
 
         using var dispatcher = new QueueDispatcher(
             redis,
+            Services.GetRequiredService<IActiveCheckoutService>(),
             Options.Create(new BookingSettings
             {
                 MaxCheckoutCapacity = 1,
@@ -199,6 +201,7 @@ public sealed class WaitingRoomTests : BookingIntegrationTestBase
 
         using var dispatcher = new QueueDispatcher(
             redis,
+            Services.GetRequiredService<IActiveCheckoutService>(),
             Options.Create(new BookingSettings
             {
                 MaxCheckoutCapacity = 1,

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Events;
 using TicketGate.Core.Metrics;
 
@@ -17,12 +18,12 @@ namespace TicketGate.Booking.Infrastructure.Workers;
 /// </summary>
 public sealed class QueueDispatcher(
     IConnectionMultiplexer redis,
+    IActiveCheckoutService activeCheckoutService,
     IOptions<BookingSettings> settings,
     IServiceScopeFactory scopeFactory,
     ILogger<QueueDispatcher> logger) : BackgroundService
 {
     private const string WaitingRoomPrefix = "waitingroom:";
-    private const string ActiveCheckoutPrefix = "active_checkout:";
 
     /// <summary>
     /// QueueDispatcherIntervalSeconds aralikla calisir.
@@ -103,37 +104,13 @@ public sealed class QueueDispatcher(
         Guid eventId,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        const string script = """
-            local current = tonumber(redis.call("GET", KEYS[2]) or "0")
-            local max = tonumber(ARGV[1])
-            local batch = tonumber(ARGV[2])
-            local capacity = max - current
-            if capacity <= 0 then
-                return {}
-            end
+        var users = await activeCheckoutService.GrantQueuedUsersAsync(
+            eventId,
+            settings.Value.MaxCheckoutCapacity,
+            settings.Value.QueueDispatchBatchSize,
+            cancellationToken);
 
-            local limit = math.min(capacity, batch)
-            local granted = {}
-            for i = 1, limit do
-                local popped = redis.call("ZPOPMIN", KEYS[1], 1)
-                if #popped == 0 then
-                    break
-                end
-
-                redis.call("INCR", KEYS[2])
-                table.insert(granted, popped[1])
-            end
-
-            return granted
-            """;
-
-        var result = (RedisResult[]?)await db.ScriptEvaluateAsync(
-            script,
-            [ToWaitingRoomKey(eventId), ToActiveCheckoutKey(eventId)],
-            [settings.Value.MaxCheckoutCapacity, settings.Value.QueueDispatchBatchSize]);
-
-        return result?.Select(item => item.ToString()).ToArray() ?? [];
+        return users.Select(userId => userId.ToString()).ToArray();
     }
 
     /// <summary>
@@ -234,12 +211,6 @@ public sealed class QueueDispatcher(
     private static RedisKey ToWaitingRoomKey(Guid eventId)
     {
         return $"{WaitingRoomPrefix}{eventId}";
-    }
-
-    /// <summary>Event id icin aktif checkout sayaci anahtarini uretir.</summary>
-    private static RedisKey ToActiveCheckoutKey(Guid eventId)
-    {
-        return $"{ActiveCheckoutPrefix}{eventId}";
     }
 
     /// <summary>

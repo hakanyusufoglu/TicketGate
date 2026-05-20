@@ -7,6 +7,7 @@ using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Results;
 using TicketGate.Core.Metrics;
@@ -22,6 +23,7 @@ public sealed class ReserveTicketHandler(
     BookingDbContext db,
     IConnectionMultiplexer redis,
     IMediator mediator,
+    IActiveCheckoutService activeCheckoutService,
     IOptions<BookingSettings> settings,
     ILogger<ReserveTicketHandler> logger) : IRequestHandler<ReserveTicketCommand, Result<ReserveTicketResponse>>
 {
@@ -38,10 +40,21 @@ public sealed class ReserveTicketHandler(
         var lockValue = request.UserId.ToString();
         var lockTtl = TimeSpan.FromSeconds(settings.Value.LockTtlSeconds);
         var success = false;
+        Guid? checkoutEventId = null;
         var lockTaken = await redisDb.StringSetAsync(lockKey, lockValue, lockTtl, When.NotExists);
 
         if (!lockTaken)
         {
+            checkoutEventId = await db.Tickets
+                .Where(item => item.Id == request.TicketId)
+                .Select(item => (Guid?)item.EventId)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (checkoutEventId is not null)
+            {
+                await activeCheckoutService.DecrementAsync(checkoutEventId.Value, request.UserId, cancellationToken);
+            }
+
             TicketGateMetrics.TicketReservations.WithLabels("conflict").Inc();
             return Result<ReserveTicketResponse>.Fail(AppError.TicketAlreadyLocked(request.TicketId));
         }
@@ -57,6 +70,8 @@ public sealed class ReserveTicketHandler(
                 TicketGateMetrics.TicketReservations.WithLabels("not_found").Inc();
                 return Result<ReserveTicketResponse>.Fail(AppError.NotFound("Ticket", request.TicketId));
             }
+
+            checkoutEventId = ticket.EventId;
 
             if (ticket.Status != TicketStatus.Available)
             {
@@ -77,6 +92,7 @@ public sealed class ReserveTicketHandler(
             TicketGateMetrics.TicketReservations.WithLabels("success").Inc();
             TicketGateMetrics.IncrementActiveLocks();
             success = true;
+            await activeCheckoutService.DecrementAsync(ticket.EventId, request.UserId, cancellationToken);
 
             return Result<ReserveTicketResponse>.Ok(new ReserveTicketResponse(
                 ticket.Id,
@@ -103,6 +119,11 @@ public sealed class ReserveTicketHandler(
         {
             if (!success)
             {
+                if (checkoutEventId is not null)
+                {
+                    await activeCheckoutService.DecrementAsync(checkoutEventId.Value, request.UserId, cancellationToken);
+                }
+
                 await ReleaseOwnedLockAsync(redisDb, lockKey, lockValue);
                 logger.LogDebug("Lock geri birakildi: {TicketId}", request.TicketId);
             }

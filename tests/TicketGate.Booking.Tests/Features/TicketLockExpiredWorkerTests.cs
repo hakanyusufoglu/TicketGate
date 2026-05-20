@@ -8,6 +8,7 @@ using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Domain.Entities;
 using TicketGate.Booking.Domain.Enums;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Booking.Infrastructure.Workers;
 
 namespace TicketGate.Booking.Tests.Features;
@@ -117,6 +118,7 @@ public sealed class TicketLockExpiredWorkerTests : BookingIntegrationTestBase
         return new TicketLockExpiredWorker(
             Services.GetRequiredService<IConnectionMultiplexer>(),
             Services.GetRequiredService<IServiceScopeFactory>(),
+            Services.GetRequiredService<IActiveCheckoutService>(),
             Options.Create(new BookingSettings { LockTtlSeconds = (int)lockTtl.TotalSeconds }),
             NullLogger<TicketLockExpiredWorker>.Instance);
     }

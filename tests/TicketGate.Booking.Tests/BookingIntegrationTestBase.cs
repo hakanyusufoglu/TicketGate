@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TicketGate.Booking.Configuration;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.TestInfrastructure;
 
 namespace TicketGate.Booking.Tests;
@@ -32,6 +33,7 @@ public abstract class BookingIntegrationTestBase : IntegrationTestBase
             ConnectionMultiplexer.Connect(RedisConnectionString));
 
         services.AddSingleton(Options.Create(new BookingSettings()));
+        services.AddSingleton<IActiveCheckoutService, ActiveCheckoutService>();
 
         services.AddLogging();
 

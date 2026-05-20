@@ -10,6 +10,7 @@ using TicketGate.Booking.Features.Tickets.Endpoints;
 using TicketGate.Booking.Features.WaitingRoom.Endpoints;
 using TicketGate.Booking.Infrastructure;
 using TicketGate.Booking.Infrastructure.Persistence;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Booking.Infrastructure.Workers;
 using TicketGate.Core.Contracts;
 
@@ -45,6 +46,7 @@ public sealed class BookingModule : IModule
         services.Configure<BookingSettings>(config.GetSection(BookingSettings.SectionName));
 
         services.AddScoped<ITicketReservationReader, TicketReservationReader>();
+        services.AddSingleton<IActiveCheckoutService, ActiveCheckoutService>();
 
         services.AddHostedService<TicketLockExpiredWorker>();
         services.AddHostedService<QueueDispatcher>();

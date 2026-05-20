@@ -418,3 +418,19 @@
 | 2026-05-19 | Mediator source generator host projelerinde tutuldu | Generator `AddMediator` kaydini derleme zamaninda urettigi icin API ve integration test host'lari handler assembly'lerini gormeli; module library'lerinde yalnizca abstraction yeterli |
 | 2026-05-19 | ValidationBehavior `IMessage` constraint'i kullaniyor | Mediator `IPipelineBehavior<TMessage,TResponse>` sozlesmesi `TMessage : IMessage` istiyor; MediatR'daki `notnull` constraint'i derlenmiyor |
 | 2026-05-20 | ValidationBehavior scoped lifetime | Mediator pipeline behavior singleton olursa scoped FluentValidation validator'larini consume edemez; merkezi kayit korunup lifetime scoped yapildi |
+
+## 2026-05-20 Active Checkout Leak Fix Notu
+
+- [x] Active checkout leak fix tamamlandi.
+- [x] `IActiveCheckoutService` ve Redis implementasyonu eklendi.
+- [x] `active_checkout:{eventId}` sayaci `active_checkout_users:{eventId}` sahiplik set'i ile idempotent yonetiliyor.
+- [x] JoinQueue ve QueueDispatcher INCR akislarindan direkt Redis scriptleri kaldirildi; artirma artik merkezi servis uzerinden yapiliyor.
+- [x] ReserveTicket basari/basarisizlik, TicketLockExpiredWorker, PaymentCompleted, PaymentFailed, PaymentRefunded ve LeaveQueue cikis noktalarinda DECR cagrilari eklendi.
+- [x] LeaveQueue toplam sayaca bakarak DECR yapmiyor; yalnizca kullanici active checkout sahipligine sahipse kapasite geri veriliyor.
+- [x] ActiveCheckoutTests eklendi; idempotent increment/decrement, reserve fail, TTL expire, payment completed, refund no-negative ve uzun calisma leak senaryolari kapsandi.
+
+| Tarih | Karar | Gerekce |
+|-------|-------|---------|
+| 2026-05-20 | Active checkout sahiplik set'i eklendi | Sadece toplam sayaca bakmak kullanici bazli cikis kararini guvenilir vermez; duplicate event ve retry durumunda sayac bozulur |
+| 2026-05-20 | ActiveCheckoutService singleton kaydedildi | Servis yalnizca Redis multiplexer ve logger kullanir; QueueDispatcher ve TicketLockExpiredWorker gibi hosted service'ler scoped bagimlilik alamaz |
+| 2026-05-20 | Reserve success sonrasi DECR idempotent yapildi | Kullanici istegindeki tum cikis noktalarini desteklemek icin payment/refund/TTL eventleri tekrar gelse bile sahiplik set'i sayaci negatife indirmez |

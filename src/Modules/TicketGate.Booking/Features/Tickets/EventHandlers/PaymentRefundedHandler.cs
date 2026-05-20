@@ -1,6 +1,7 @@
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using TicketGate.Booking.Domain.Enums;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Events;
 using TicketGate.Booking.Infrastructure.Persistence;
 
@@ -13,6 +14,7 @@ namespace TicketGate.Booking.Features.Tickets.EventHandlers;
 /// </summary>
 public sealed class PaymentRefundedHandler(
     BookingDbContext db,
+    IActiveCheckoutService activeCheckoutService,
     IMediator mediator) : INotificationHandler<PaymentRefunded>
 {
     /// <summary>
@@ -33,6 +35,7 @@ public sealed class PaymentRefundedHandler(
 
         ticket.ReleaseAfterRefund();
         await db.SaveChangesAsync(cancellationToken);
+        await activeCheckoutService.DecrementAsync(ticket.EventId, notification.UserId, cancellationToken);
 
         await mediator.Publish(
             new TicketReleased(ticket.Id, ticket.EventId, notification.UserId),

@@ -1,5 +1,6 @@
 using Mediator;
 using StackExchange.Redis;
+using TicketGate.Booking.Infrastructure.Services;
 using TicketGate.Core.Errors;
 using TicketGate.Core.Metrics;
 using TicketGate.Core.Results;
@@ -10,7 +11,9 @@ namespace TicketGate.Booking.Features.WaitingRoom.Commands.LeaveQueue;
 /// Kullaniciyi Redis Sorted Set'ten ZREM ile cikarir.
 /// Kullanici kuyruga girmemisse 404 donerek istemciye stale state bilgisini acik eder.
 /// </summary>
-public sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
+public sealed class LeaveQueueHandler(
+    IConnectionMultiplexer redis,
+    IActiveCheckoutService activeCheckoutService)
     : IRequestHandler<LeaveQueueCommand, Result>
 {
     /// <summary>
@@ -23,6 +26,10 @@ public sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
         var db = redis.GetDatabase();
         var queueKey = ToWaitingRoomKey(request.EventId);
         var removed = await db.SortedSetRemoveAsync(queueKey, request.UserId.ToString());
+        var activeCheckoutRemoved = await activeCheckoutService.DecrementAsync(
+            request.EventId,
+            request.UserId,
+            cancellationToken);
 
         if (removed)
         {
@@ -30,7 +37,7 @@ public sealed class LeaveQueueHandler(IConnectionMultiplexer redis)
             TicketGateMetrics.WaitingRoomDepth.WithLabels(request.EventId.ToString()).Set(queueDepth);
         }
 
-        return removed
+        return removed || activeCheckoutRemoved
             ? Result.Ok()
             : Result.Fail(AppError.NotFound("QueuePosition", request.UserId));
     }
