@@ -110,6 +110,11 @@ ZPOPMIN → sıradaki kullanıcılar  QueueDispatcher, 5sn'de bir
 
 Kapasite boşsa  → direkt rezervasyon
 Kapasite doluysa → kuyruğa gir, SSE ile bildirim al
+Your turn geldi ama işlem yapılmadıysa → checkout session expire, sıra ilerler
+
+active_checkout sayacı her girişte INCR, her çıkışta DECR yapılır.
+Çıkış senaryoları: reserve başarısız · lock TTL expire · ödeme tamamlandı ·
+ödeme başarısız · iade · checkout timeout. Sayaç hiçbir zaman sızmaz.
 ```
 
 ### Ticket State Machine
