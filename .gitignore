@@ -7,6 +7,8 @@ obj/
 *.sln.docstates
 TestResults/
 artifacts/
+.agent/
+AGENTS.md
 .env
 *.env.local
 infrastructure/docker/docker-compose.override.yml
