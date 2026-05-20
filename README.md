@@ -110,6 +110,11 @@ ZPOPMIN → sıradaki kullanıcılar  QueueDispatcher, 5sn'de bir
 
 Kapasite boşsa  → direkt rezervasyon
 Kapasite doluysa → kuyruğa gir, SSE ile bildirim al
+Your turn geldi ama işlem yapılmadıysa → checkout session expire, sıra ilerler
+
+active_checkout sayacı her girişte INCR, her çıkışta DECR yapılır.
+Çıkış senaryoları: reserve başarısız · lock TTL expire · ödeme tamamlandı ·
+ödeme başarısız · iade · checkout timeout. Sayaç hiçbir zaman sızmaz.
 ```
 
 ### Ticket State Machine
@@ -148,10 +153,11 @@ AVAILABLE ──────────────────────► 
 ### Bilinçli Olarak Kullanılmayanlar
 
 | Pattern | Neden yok |
-|---------|-----------|
-| Repository Pattern | DbContext handler'da direkt kullanılır; ekstra soyutlama anlamsız |
-| AutoMapper | `Select()` projection tercih edilir; gizli mapping hatası riski yok |
-| Saga (orchestration) | Choreography yeterli; merkezi orkestratör gereksiz karmaşıklık |
+|---|---|
+| **Repository Pattern** | EF Core zaten Repository/Unit of Work benzeri bir soyutlama sağlıyor. Üstüne ekstra Repository katmanı eklemek bu proje için gereksiz karmaşıklık yaratır. Handler’lar DbContext’i doğrudan kullanır; davranışlar entegrasyon testlerinde Testcontainers ile doğrulanır. |
+| **AutoMapper** | Mapping davranışının görünür olmasını tercih ettim. `Select()` projection ile dönüşümler açık şekilde yazılır ve derleme zamanında daha kolay kontrol edilir. Bu da gizli mapping hatası riskini azaltır. |
+| **Saga / Orchestration** | Modüller arası iletişim domain event choreography ile ilerliyor. Bu senaryoda merkezi bir orkestratör eklemek, çözdüğü problemden daha fazla karmaşıklık getirebilir. |
+| **API Gateway / Ocelot** | Uygulama şu an tek process içinde çalışan Modular Monolith olarak tasarlandı. Bu aşamada API Gateway eklemek gereksiz operasyonel karmaşıklık oluşturur. Servisler ayrıldığında tekrar değerlendirilebilir. Şimdilik ASP.NET Core built-in RateLimiter yeterli. |
 
 ---
 
